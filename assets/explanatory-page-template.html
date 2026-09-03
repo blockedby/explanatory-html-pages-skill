@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A visual guide to the path a web request takes from a browser to the data that powers a response.">
+  <title>A web request, made visible</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2420;
+      --paper: #f4f1e9;
+      --surface: #fffdf8;
+      --wash: #e7e3d9;
+      --muted: #626861;
+      --line: #1d2420;
+      --rule: #c9c5ba;
+      --accent: #d4543b;
+      --accent-soft: #f1d2c9;
+      --teal: #17666a;
+      --measure: 76rem;
+      --shadow: 0.55rem 0.55rem 0 var(--ink);
+    }
+
+    *,
+    *::before,
+    *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--paper);
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 1rem;
+      line-height: 1.6;
+      text-rendering: optimizeLegibility;
+    }
+
+    ::selection { color: var(--paper); background: var(--ink); }
+
+    a {
+      color: inherit;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 0.18em;
+    }
+
+    a:hover { text-decoration-style: double; }
+
+    a:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 4px;
+    }
+
+    code,
+    .eyebrow,
+    .issue,
+    .section-kicker,
+    .node-role,
+    .node-index,
+    .connector-label,
+    .diagram-label,
+    .diagram-key,
+    .step-boundary,
+    .step-index,
+    .principle-index,
+    .takeaway-label,
+    .footer-mark {
+      font-family: "Courier New", Courier, monospace;
+    }
+
+    code {
+      padding: 0.08em 0.3em;
+      border: 1px solid var(--rule);
+      background: var(--wash);
+      overflow-wrap: anywhere;
+    }
+
+    h1,
+    h2,
+    h3,
+    p,
+    dl,
+    figure { margin-top: 0; }
+
+    h1,
+    h2,
+    h3 { text-wrap: balance; }
+
+    .page {
+      width: min(calc(100% - 2.5rem), var(--measure));
+      margin-inline: auto;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 2;
+      padding: 0.7rem 1rem;
+      color: var(--paper);
+      background: var(--ink);
+      transform: translateY(-180%);
+      transition: transform 160ms ease;
+    }
+
+    .skip-link:focus { transform: translateY(0); }
+
+    .site-header {
+      padding: clamp(1.5rem, 4vw, 2.75rem) 0 0;
+      border-top: 0.45rem solid var(--accent);
+      border-bottom: 4px solid var(--line);
+    }
+
+    .utility-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .eyebrow,
+    .issue {
+      margin: 0;
+      font-size: 0.73rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .eyebrow-mark {
+      display: inline-block;
+      width: 0.75rem;
+      height: 0.75rem;
+      background: var(--accent);
+    }
+
+    .issue { color: var(--muted); }
+
+    .masthead-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.65fr);
+      gap: clamp(2.5rem, 8vw, 8rem);
+      align-items: end;
+      padding: clamp(3.5rem, 9vw, 7.5rem) 0 clamp(3rem, 7vw, 5.5rem);
+    }
+
+    h1 {
+      max-width: 11ch;
+      margin-bottom: 1.75rem;
+      font-size: clamp(3.6rem, 10.5vw, 9rem);
+      line-height: 0.86;
+      letter-spacing: -0.075em;
+    }
+
+    h1 em {
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    .lead {
+      max-width: 44rem;
+      margin-bottom: 0;
+      font-size: clamp(1.18rem, 2vw, 1.55rem);
+      line-height: 1.45;
+    }
+
+    .orientation {
+      padding-left: clamp(1.25rem, 3vw, 2rem);
+      border-left: 2px solid var(--line);
+    }
+
+    .orientation h2 {
+      margin-bottom: 1.25rem;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .metadata {
+      margin-bottom: 1.5rem;
+    }
+
+    .metadata > div {
+      display: grid;
+      grid-template-columns: minmax(5rem, 0.75fr) minmax(0, 1.25fr);
+      gap: 0.75rem;
+      padding: 0.65rem 0;
+      border-top: 1px solid var(--rule);
+    }
+
+    .metadata dt {
+      color: var(--muted);
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .metadata dd { margin: 0; font-weight: 700; }
+
+    .orientation-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .toc {
+      border-top: 1px solid var(--rule);
+    }
+
+    .toc ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .toc li { flex: 1 1 10rem; }
+
+    .toc a {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      min-height: 3.5rem;
+      padding: 0.8rem 0.8rem 0.8rem 0;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .toc a:hover { color: var(--accent); }
+
+    .toc-number {
+      color: var(--accent);
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.76rem;
+    }
+
+    main section {
+      padding: clamp(4rem, 9vw, 8rem) 0;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .section-kicker {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .section-number {
+      display: inline-grid;
+      width: 2.35rem;
+      height: 2.35rem;
+      place-items: center;
+      border: 2px solid var(--line);
+      border-radius: 50%;
+      font-size: 0.75rem;
+    }
+
+    h2 {
+      max-width: 17ch;
+      margin-bottom: 1.25rem;
+      font-size: clamp(2.3rem, 5.5vw, 5rem);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+    }
+
+    h3 {
+      margin-bottom: 0.7rem;
+      font-size: 1.25rem;
+      line-height: 1.15;
+    }
+
+    .section-intro {
+      max-width: 47rem;
+      margin-bottom: 0;
+      font-size: clamp(1.08rem, 1.8vw, 1.3rem);
+      line-height: 1.5;
+    }
+
+    .definition-grid {
+      display: grid;
+      grid-template-columns: minmax(10rem, 0.7fr) minmax(0, 1.3fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      align-items: start;
+    }
+
+    .display-word {
+      margin: 0;
+      color: var(--accent);
+      font-size: clamp(4rem, 10vw, 9rem);
+      font-weight: 800;
+      line-height: 0.78;
+      letter-spacing: -0.1em;
+      overflow-wrap: anywhere;
+    }
+
+    .definition {
+      padding: clamp(1.5rem, 4vw, 3rem);
+      color: var(--paper);
+      background: var(--ink);
+      box-shadow: var(--shadow);
+    }
+
+    .definition h2 {
+      max-width: 16ch;
+      color: var(--paper);
+      font-size: clamp(2rem, 4.5vw, 4rem);
+    }
+
+    .definition p { max-width: 43rem; }
+
+    .definition .important {
+      margin-bottom: 1rem;
+      color: #fff;
+      font-size: clamp(1.2rem, 2vw, 1.55rem);
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .definition-detail {
+      margin-bottom: 2rem;
+      color: #d8ddd7;
+    }
+
+    .signal-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin: 0;
+      border-top: 1px solid #68716a;
+    }
+
+    .signal-list > div {
+      padding: 1rem 0.85rem 0 0;
+    }
+
+    .signal-list > div + div { border-left: 1px solid #68716a; padding-left: 0.85rem; }
+
+    .signal-list dt {
+      margin-bottom: 0.3rem;
+      color: #aab4ab;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .signal-list dd {
+      margin: 0;
+      color: #fff;
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+
+    .diagram {
+      margin: 2.75rem 0 0;
+      padding: clamp(1rem, 3vw, 2rem);
+      border: 3px solid var(--line);
+      background: var(--surface);
+    }
+
+    .diagram-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .diagram-label,
+    .diagram-key {
+      margin: 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .diagram-label {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .diagram-key {
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .key-line {
+      display: inline-block;
+      width: 1.6rem;
+      margin-right: 0.4rem;
+      border-top: 2px solid var(--accent);
+      vertical-align: middle;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: minmax(8rem, 1fr) minmax(3.5rem, 0.52fr) minmax(8rem, 1fr) minmax(3.5rem, 0.52fr) minmax(8rem, 1fr) minmax(3.5rem, 0.52fr) minmax(8rem, 1fr);
+      gap: 0.75rem;
+      align-items: stretch;
+      padding: 2rem 0;
+    }
+
+    .node {
+      min-width: 0;
+      padding: 1.25rem;
+      border: 2px solid var(--line);
+      background: var(--paper);
+    }
+
+    .node--dark {
+      color: var(--paper);
+      background: var(--ink);
+    }
+
+    .node-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 2.6rem;
+    }
+
+    .node-index,
+    .node-role {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .node-index { color: var(--accent); }
+    .node--dark .node-role { color: #b9c3b9; }
+    .node:not(.node--dark) .node-role { color: var(--muted); }
+
+    .node h3 {
+      margin-bottom: 0.55rem;
+      font-size: clamp(1.2rem, 2vw, 1.55rem);
+    }
+
+    .node p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .node--dark p { color: #d8ddd7; }
+
+    .connector {
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 0.55rem;
+      min-width: 0;
+    }
+
+    .connector-label {
+      color: var(--teal);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .connector-arrow {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      color: var(--accent);
+    }
+
+    .connector-arrow::before {
+      flex: 1;
+      content: "";
+      border-top: 2px solid currentColor;
+    }
+
+    .connector-arrow::after {
+      content: "→";
+      font-family: "Courier New", Courier, monospace;
+      font-size: 1.55rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    figcaption {
+      padding-top: 1rem;
+      border-top: 1px solid var(--rule);
+      font-size: 0.94rem;
+    }
+
+    figcaption strong { margin-right: 0.35rem; }
+
+    .note-strip {
+      display: grid;
+      grid-template-columns: minmax(9rem, 0.45fr) minmax(0, 1.55fr);
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      padding: 1.2rem 1.35rem;
+      border-left: 0.4rem solid var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .note-strip strong { font-family: "Courier New", Courier, monospace; font-size: 0.78rem; text-transform: uppercase; }
+    .note-strip p { margin: 0; }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      margin: 2.75rem 0 0;
+      padding: 0;
+      border: 2px solid var(--line);
+      list-style: none;
+    }
+
+    .steps li {
+      min-width: 0;
+      padding: 1.5rem;
+    }
+
+    .steps li + li { border-left: 1px solid var(--rule); }
+
+    .step-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 2.8rem;
+    }
+
+    .step-index,
+    .principle-index {
+      color: var(--accent);
+      font-size: 1.65rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .step-boundary {
+      color: var(--muted);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .steps h3 { font-size: 1.2rem; }
+
+    .steps p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .deep-dive {
+      margin-top: 1.5rem;
+      border: 2px solid var(--line);
+      background: var(--surface);
+    }
+
+    .deep-dive summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.05rem 1.25rem;
+      cursor: pointer;
+      font-weight: 700;
+      list-style: none;
+    }
+
+    .deep-dive summary::-webkit-details-marker { display: none; }
+
+    .deep-dive summary::after {
+      content: "+";
+      color: var(--accent);
+      font-family: "Courier New", Courier, monospace;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .deep-dive[open] summary { border-bottom: 1px solid var(--rule); }
+    .deep-dive[open] summary::after { content: "−"; }
+
+    .deep-dive-content {
+      display: grid;
+      grid-template-columns: minmax(9rem, 0.6fr) minmax(0, 1.4fr);
+      gap: 2rem;
+      padding: 1.35rem 1.25rem 1.5rem;
+    }
+
+    .deep-dive-content p { margin-bottom: 0; }
+    .deep-dive-label { font-family: "Courier New", Courier, monospace; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
+
+    .table-frame { margin-top: 2.75rem; }
+
+    .boundary-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+    }
+
+    .boundary-table caption {
+      margin-bottom: 0.9rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+      text-align: left;
+    }
+
+    .boundary-table th,
+    .boundary-table td {
+      padding: 1rem;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .boundary-table th {
+      color: var(--paper);
+      background: var(--ink);
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .boundary-table td { font-size: 0.95rem; }
+    .boundary-table td:first-child { width: 20%; font-weight: 700; }
+    .boundary-table td:nth-child(2) { width: 33%; }
+
+    .principle-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 2.75rem;
+    }
+
+    .principle {
+      min-width: 0;
+      padding: 1.35rem;
+      border-top: 3px solid var(--line);
+      background: var(--surface);
+    }
+
+    .principle-index {
+      display: block;
+      margin-bottom: 2.75rem;
+    }
+
+    .principle h3 { margin-bottom: 0.6rem; }
+
+    .principle p:last-child {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .takeaway {
+      display: grid;
+      grid-template-columns: minmax(8rem, 0.55fr) minmax(0, 1.45fr);
+      gap: 1.5rem;
+      align-items: start;
+      margin-top: 2.75rem;
+      padding: 1.5rem;
+      border: 3px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .takeaway-label {
+      color: var(--teal);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .takeaway p { margin: 0; font-size: clamp(1.15rem, 2vw, 1.4rem); line-height: 1.4; }
+
+    .site-footer {
+      padding: 2rem 0 4rem;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 0.7fr 1.3fr;
+      gap: 2rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .footer-mark {
+      margin: 0;
+      color: var(--ink);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .footer-grid p:last-child { margin: 0; }
+
+    @media (max-width: 900px) {
+      .flow {
+        grid-template-columns: minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr);
+        gap: 0.45rem;
+      }
+
+      .node { padding: 1rem; }
+      .node-meta { margin-bottom: 1.8rem; }
+      .node-index,
+      .node-role { font-size: 0.6rem; }
+    }
+
+    @media (max-width: 720px) {
+      .page { width: min(calc(100% - 1.5rem), var(--measure)); }
+
+      .utility-row,
+      .diagram-topline { align-items: flex-start; flex-direction: column; }
+      .utility-row { gap: 0.55rem; }
+
+      .masthead-grid,
+      .definition-grid,
+      .deep-dive-content,
+      .footer-grid { grid-template-columns: 1fr; }
+
+      .masthead-grid { gap: 3rem; }
+      .orientation { padding-left: 1rem; }
+      .display-word { font-size: clamp(3.7rem, 20vw, 6.5rem); }
+      .signal-list { grid-template-columns: 1fr; }
+      .signal-list > div + div { padding-left: 0; border-top: 1px solid #68716a; border-left: 0; }
+
+      .flow { grid-template-columns: 1fr; gap: 0.5rem; padding: 1.5rem 0; }
+
+      .connector {
+        grid-template-columns: 2rem minmax(0, 1fr);
+        grid-template-rows: 2rem;
+        justify-items: start;
+        justify-content: start;
+        gap: 0.75rem;
+        padding-left: 0.75rem;
+      }
+
+      .connector-label { grid-column: 2; grid-row: 1; align-self: center; text-align: left; }
+
+      .connector-arrow {
+        grid-column: 1;
+        grid-row: 1;
+        width: 2rem;
+        height: 2rem;
+        flex-direction: column;
+      }
+
+      .connector-arrow::before { width: 0; height: 1.15rem; border-top: 0; border-left: 2px solid currentColor; }
+      .connector-arrow::after { content: "↓"; }
+
+      .note-strip,
+      .takeaway { grid-template-columns: 1fr; gap: 0.7rem; }
+
+      .steps,
+      .principle-grid { grid-template-columns: 1fr; }
+
+      .steps li + li { border-top: 1px solid var(--rule); border-left: 0; }
+      .step-top,
+      .principle-index { margin-bottom: 1.2rem; }
+
+      .boundary-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .boundary-table,
+      .boundary-table tbody,
+      .boundary-table tr,
+      .boundary-table td { display: block; width: 100%; }
+
+      .boundary-table tr { border: 2px solid var(--line); }
+      .boundary-table tr + tr { margin-top: 1rem; }
+
+      .boundary-table td,
+      .boundary-table td:first-child,
+      .boundary-table td:nth-child(2) {
+        display: grid;
+        grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1.3fr);
+        width: 100%;
+        gap: 0.8rem;
+        border: 0;
+      }
+
+      .boundary-table td + td { border-top: 1px solid var(--rule); }
+
+      .boundary-table td::before {
+        content: attr(data-label);
+        color: var(--muted);
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .skip-link { transition: none; }
+    }
+
+    @media print {
+      :root { --paper: #fff; --surface: #fff; --wash: #f2f2f2; }
+      body { font-size: 10pt; }
+      .skip-link,
+      .toc { display: none; }
+      .site-header { padding-top: 0; }
+      .masthead-grid,
+      main section { padding-block: 1.5rem; }
+      .definition,
+      .takeaway { box-shadow: none; }
+      .flow { grid-template-columns: repeat(7, 1fr); }
+      .deep-dive[open] .deep-dive-content { display: grid; }
+      a { text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="page">
+      <div class="utility-row">
+        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span>Systems / explanatory guide</p>
+        <p class="issue">One request, four boundaries</p>
+      </div>
+
+      <div class="masthead-grid">
+        <div>
+          <h1>A web request,<br><em>made visible.</em></h1>
+          <p class="lead">Follow one message from a browser to the data that powers a response. The goal is a useful mental model, not a tour of every production detail.</p>
+        </div>
+
+        <aside class="orientation" aria-labelledby="orientation-title">
+          <h2 id="orientation-title">At a glance</h2>
+          <dl class="metadata">
+            <div><dt>Audience</dt><dd>New to web systems</dd></div>
+            <div><dt>Read time</dt><dd>About 4 minutes</dd></div>
+            <div><dt>Model</dt><dd>One request, outward</dd></div>
+          </dl>
+          <p class="orientation-note">Read top to bottom once. Then use the map as a reference when a service feels more complicated than it should.</p>
+        </aside>
+      </div>
+
+      <nav class="toc" aria-label="Guide sections">
+        <ul>
+          <li><a href="#meaning"><span class="toc-number" aria-hidden="true">01</span><span>Meaning</span></a></li>
+          <li><a href="#map"><span class="toc-number" aria-hidden="true">02</span><span>Path</span></a></li>
+          <li><a href="#sequence"><span class="toc-number" aria-hidden="true">03</span><span>Sequence</span></a></li>
+          <li><a href="#boundaries"><span class="toc-number" aria-hidden="true">04</span><span>Boundaries</span></a></li>
+          <li><a href="#mental-model"><span class="toc-number" aria-hidden="true">05</span><span>Keep the model</span></a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section id="meaning" aria-labelledby="meaning-title">
+      <div class="page">
+        <div class="section-kicker"><span class="section-number" aria-hidden="true">01</span><span>Start with one message</span></div>
+        <div class="definition-grid">
+          <p class="display-word" aria-hidden="true">Request</p>
+          <div class="definition">
+            <h2 id="meaning-title">What is a web request?</h2>
+            <p class="important">A web request is a message that asks another computer to do something or return something.</p>
+            <p class="definition-detail">A browser creates the message. The message names a destination and an action, such as reading an order or saving a profile change. A response comes back with a result and enough information for the browser to show what happened.</p>
+            <dl class="signal-list">
+              <div><dt>Input</dt><dd>Method, destination, and optional data.</dd></div>
+              <div><dt>Work</dt><dd>Routing, rules, and state access.</dd></div>
+              <div><dt>Output</dt><dd>A status, result, and response data.</dd></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="map" aria-labelledby="map-title">
+      <div class="page">
+        <div class="section-kicker"><span class="section-number" aria-hidden="true">02</span><span>See the relationship</span></div>
+        <h2 id="map-title">Start with the path.</h2>
+        <p class="section-intro">A request crosses boundaries. Each boundary has a different job, so follow the message rather than treating “the server” as one mysterious box.</p>
+
+        <figure class="diagram" aria-labelledby="flow-caption">
+          <div class="diagram-topline">
+            <p class="diagram-label"><span class="live-dot" aria-hidden="true"></span>One request / outward journey</p>
+            <p class="diagram-key"><span class="key-line" aria-hidden="true"></span>Connector labels name the message</p>
+          </div>
+
+          <div class="flow">
+            <div class="node node--dark">
+              <div class="node-meta"><span class="node-index">01</span><span class="node-role">Origin</span></div>
+              <h3>Browser</h3>
+              <p>Creates a message from a person’s action and waits for a result.</p>
+            </div>
+
+            <div class="connector">
+              <span class="connector-label">request</span>
+              <span class="connector-arrow" aria-hidden="true"></span>
+            </div>
+
+            <div class="node">
+              <div class="node-meta"><span class="node-index">02</span><span class="node-role">Route</span></div>
+              <h3>Edge</h3>
+              <p>Finds a healthy destination and can handle simple checks first.</p>
+            </div>
+
+            <div class="connector">
+              <span class="connector-label">route</span>
+              <span class="connector-arrow" aria-hidden="true"></span>
+            </div>
+
+            <div class="node">
+              <div class="node-meta"><span class="node-index">03</span><span class="node-role">Decision</span></div>
+              <h3>Application</h3>
+              <p>Checks rules, coordinates work, and shapes the response.</p>
+            </div>
+
+            <div class="connector">
+              <span class="connector-label">query</span>
+              <span class="connector-arrow" aria-hidden="true"></span>
+            </div>
+
+            <div class="node">
+              <div class="node-meta"><span class="node-index">04</span><span class="node-role">Memory</span></div>
+              <h3>Database</h3>
+              <p>Reads or writes the durable records needed by the application.</p>
+            </div>
+          </div>
+
+          <figcaption id="flow-caption"><strong>Read it as:</strong> the browser sends a request from left to right; the result travels back through the application and edge before the browser can show it.</figcaption>
+        </figure>
+
+        <div class="note-strip">
+          <strong>Simplify on purpose.</strong>
+          <p>Real systems may add caches, queues, identity services, or more databases. Start with the few boundaries that explain the reader’s question, then add detail only when it changes the decision they need to make.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="sequence" aria-labelledby="sequence-title">
+      <div class="page">
+        <div class="section-kicker"><span class="section-number" aria-hidden="true">03</span><span>Unpack the mechanism</span></div>
+        <h2 id="sequence-title">One exchange, step by step.</h2>
+        <p class="section-intro">The same four boundaries become easier to reason about when each step has one verb and one owner.</p>
+
+        <ol class="steps">
+          <li>
+            <div class="step-top"><span class="step-index">01</span><span class="step-boundary">Browser</span></div>
+            <h3>Describe the job</h3>
+            <p>The browser packages the action as a method, destination, headers, and optional body.</p>
+          </li>
+          <li>
+            <div class="step-top"><span class="step-index">02</span><span class="step-boundary">Edge</span></div>
+            <h3>Find a route</h3>
+            <p>The edge layer identifies where the request should go and may reject or cache it.</p>
+          </li>
+          <li>
+            <div class="step-top"><span class="step-index">03</span><span class="step-boundary">Application</span></div>
+            <h3>Make a decision</h3>
+            <p>The application authenticates, validates, and chooses the work needed for the request.</p>
+          </li>
+          <li>
+            <div class="step-top"><span class="step-index">04</span><span class="step-boundary">Database</span></div>
+            <h3>Return state</h3>
+            <p>The database supplies or records durable state; the application turns it into a response.</p>
+          </li>
+        </ol>
+
+        <details class="deep-dive">
+          <summary>See the same exchange in plain English</summary>
+          <div class="deep-dive-content">
+            <p class="deep-dive-label">A small example</p>
+            <p>A person opens an order page. The browser sends <code>GET /orders</code>. The application checks the session, asks the database for the person’s orders, receives the records, and sends back a response. The browser uses that response to render the page. A failed check or unavailable dependency changes the response at the boundary where it occurs.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section id="boundaries" aria-labelledby="boundaries-title">
+      <div class="page">
+        <div class="section-kicker"><span class="section-number" aria-hidden="true">04</span><span>Keep responsibilities distinct</span></div>
+        <h2 id="boundaries-title">Each boundary answers a different question.</h2>
+        <p class="section-intro">A useful diagram is not only a path. It also tells the reader what each participant owns and what it should not be asked to decide.</p>
+
+        <div class="table-frame">
+          <table class="boundary-table">
+            <caption>Responsibilities along the request path</caption>
+            <thead>
+              <tr>
+                <th scope="col">Boundary</th>
+                <th scope="col">Question it answers</th>
+                <th scope="col">Typical responsibility</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Boundary"><strong>Browser</strong></td>
+                <td data-label="Question">What does the person need to see?</td>
+                <td data-label="Responsibility">Starts the request and renders the response.</td>
+              </tr>
+              <tr>
+                <td data-label="Boundary"><strong>Edge</strong></td>
+                <td data-label="Question">Where should this request go?</td>
+                <td data-label="Responsibility">Routes traffic and can reject or cache it.</td>
+              </tr>
+              <tr>
+                <td data-label="Boundary"><strong>Application</strong></td>
+                <td data-label="Question">Is the action allowed, and what follows?</td>
+                <td data-label="Responsibility">Applies rules and coordinates work.</td>
+              </tr>
+              <tr>
+                <td data-label="Boundary"><strong>Database</strong></td>
+                <td data-label="Question">What durable state exists?</td>
+                <td data-label="Responsibility">Stores and retrieves records.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="mental-model" aria-labelledby="mental-model-title">
+      <div class="page">
+        <div class="section-kicker"><span class="section-number" aria-hidden="true">05</span><span>Take the model with you</span></div>
+        <h2 id="mental-model-title">Why draw the boundaries?</h2>
+        <p class="section-intro">Boundaries make causes visible. When something is slow, rejected, or missing, the path suggests where to look instead of making every problem sound like “the network.”</p>
+
+        <div class="principle-grid">
+          <article class="principle">
+            <span class="principle-index">01</span>
+            <h3>Follow the message</h3>
+            <p>Ask what was sent, where it went, and what came back. This keeps an explanation anchored to observable events.</p>
+          </article>
+          <article class="principle">
+            <span class="principle-index">02</span>
+            <h3>Name the owner</h3>
+            <p>Give each action a boundary. Clear ownership turns a large system into a sequence of smaller questions.</p>
+          </article>
+          <article class="principle">
+            <span class="principle-index">03</span>
+            <h3>Add detail with a reason</h3>
+            <p>Introduce a cache, queue, or extra service only when it explains a behavior the reader needs to understand.</p>
+          </article>
+        </div>
+
+        <div class="takeaway" role="note">
+          <span class="takeaway-label">Keep this model</span>
+          <p><strong>A request is a message crossing boundaries.</strong> Each boundary can validate, route, change, or return it. That is enough of a map to choose the next useful question.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="page footer-grid">
+      <p class="footer-mark">Explanatory HTML / Reference</p>
+      <p>This complete sample uses only semantic HTML and inline CSS. Copy its structural patterns, then keep only the sections that help a specific reader understand a specific concept.</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+
+# Editor and IDE state
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python cache and local tooling output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local logs and generated previews
+*.log
+build/
+dist/
+preview/
