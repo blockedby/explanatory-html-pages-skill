@@ -2,7 +2,7 @@
 
 Tracking: https://github.com/blockedby/explanatory-html-pages-skill/issues/1
 
-Verified locally on Linux x64, Node 24.21.0, the TeaVM engine from `@plantuml/mcp-js@0.2.2`, `@viz-js/viz@3.28.0` and Playwright Chromium (BPMN only). Local JRE/JAR/archive removed; no Java fallback. This records implementation acceptance, not proof of business correctness of the illustrative documents.
+Verified on Linux x64 with Node 24.21.0. Builds use npm dependencies only: PlantUML TeaVM/Viz.js in Node, BPMN XML/DI preparation in Node, and embedded bpmn-js/DOMPurify in the reader. Neither Java nor Chromium is a build requirement. Chromium was used only as an optional development tool to test the ordinary reader-browser path. This is implementation acceptance, not proof of business correctness.
 
 ## Fresh verification
 
@@ -11,43 +11,50 @@ npm test
 npm run build:examples
 npm run test:browser
 npm run validate
+npm run doctor
 git diff --check
-node scripts/document.mjs doctor
 ```
 
-Results: **40 unit/renderer/integration tests and 2 browser scenarios passed**, zero skips or failures. All four complete documents built. Python repository/HTML/canonical-asset validation passed. Doctor reported all required local tools available. A second build produced byte-identical SHA-256 hashes for all four generated examples and the standalone reference.
+**44 unit/renderer/integration tests and 10 browser scenarios passed**, zero failures or skips. All four documents and the canonical reference built. Repository/HTML/asset validation and doctor passed. Repeated builds produced identical hashes.
 
-JRE-removal acceptance: the full suite ran after physically removing `.tools/jre`, `.tools/jre.tar.gz` and `.tools/plantuml.jar`. A complete technical explainer also built with `JAVA_BIN`, `PLANTUML_JAR` and `BPMN_CHROMIUM_EXECUTABLE` all pointing to nonexistent paths. Renderer tests additionally use an empty executable `PATH`, blocked worker network APIs, real deadlines and oversized diagrams.
+### Production-only installation proof
+
+In a fresh temporary toolkit copy (`/tmp/bpmn-reader-production-lEJLP7`), default `node scripts/setup.mjs` installed production npm dependencies only. Confirmed absent: `node_modules/playwright`, `node_modules/playwright-core`, `.tools` (no downloaded browser/JRE).
+
+With `PATH=/nonexistent` and Java/JAR/Chromium/cache overrides pointing to missing paths, the absolute Node executable successfully ran doctor, all four example builds, and **17 preparation/build/tooling tests**. No Playwright package/cache was installed; executable search PATH and browser overrides could not resolve a browser. The remaining local Chromium cache in the development worktree is optional test tooling, not shipped or required by the authoring workflow.
 
 ## Acceptance matrix
 
-| Issue item | Evidence | Result |
+| Requirement | Evidence | Result |
 | --- | --- | --- |
-| 1. Theme and shell | Canonical CSS/JS embedded verbatim; drift validator; inspected desktop/mobile screenshots; browser focus, reduced-motion, selection and print checks | Passed |
-| 2. Scaffold/build | Create/build from `/tmp`; all three presets in English/Russian; stable Unicode IDs; source/output protection and failure preservation | Passed |
-| 3. Explanatory components | Definition, steps, comparison, notes, details, conclusions and native flow snippets built in the catalog | Passed |
-| 4. Analysis components | Sixteen optional semantic snippets, including scenarios, scope/actors, rules, criteria, dictionaries, contracts, mapping and AS-IS/TO-BE | Passed |
-| 5. PlantUML | Sixteen tests; real Node/TeaVM/Viz.js rendering for seven diagram families; syntax/unsafe-input/runtime/size/error-artifact checks | Passed |
-| 6. BPMN | Seven real Chromium tests; auto-layout and explicit-DI collaboration/lane/message/timer; unsupported/missing elements diagnosed | Passed |
-| 7. Setup/diagnostics | Pinned npm lockfile with integrity hashes, explicit npm/browser setup and offline doctor; builds do not install tools or require Java | Passed on tested platform |
-| 8. Complete examples | Technical: 5 sections / 1 UML; process: 8 sections / 2 BPMN; integration: 7 sections / 1 UML; catalog: 16 sections | Passed |
-| 9. Skill/docs | skills.sh frontmatter, runnable commands, local reference links, canonical implementation in code rather than per-document prose | Passed |
-| 10. Verification | Tests above; zero runtime HTTP requests/page errors; local diagram scrolling; malformed inputs, safe SVG, namespace isolation, source downloads | Passed |
+| Browser-free authoring | Fresh default setup and production-only builds described above; Playwright is a devDependency | Passed |
+| BPMN source/DI safety | Ten preparation tests: XML limits, malformed references, geometry, complete DI, subprocess coverage, cancellable auto-layout, source preservation, no resource requests | Passed |
+| Reader-side BPMN | Built process document renders both auto-layout and explicit-DI pool/lane/message/timer diagrams via embedded assets | Passed |
+| Offline HTML | `file:` document tests intercept HTTP; no network requests/page errors; no CDN or source fetch | Passed |
+| Loading/error/no-JS | Localized status and error text, visible print feedback, no-JS explanation, retained source/downloads | Passed |
+| SVG safety/isolation | Active-resource stripping, inert source/script terminators, marker references isolated across duplicates, XML declarations/size limits; BPMN script-task bodies never execute | Passed |
+| Theme/navigation | Canonical assets, desktop/mobile keyboard/focus/Escape, final-section marker, reduced motion, selection, overflow | Passed |
+| Print | Ready diagrams visible; pending/error messages visible; navigation/source controls hidden; explanatory disclosures included | Passed |
+| Upstream attribution | Embedded license notices; original bpmn.io watermark retained and visibly outside diagram geometry | Passed |
+| PlantUML | Sixteen real JS/WASM renderer tests including all seven notation families; no Java fallback | Passed |
+| Scaffold/content/output | Localized presets, Unicode IDs, metadata, safe paths, atomic output, source preservation | Passed |
+| Examples | Technical: 5 sections / 1 UML; process: 8 sections / 2 BPMN; integration: 7 sections / 1 UML; catalog: 16 sections | Passed |
+
+The process HTML is approximately 310 KB in this build, including both diagrams, their editable sources and the embedded viewer/sanitizer. Documents without BPMN do not include those bundles.
 
 ## Browser evidence
 
-The browser suite opens built HTML via `file:` with HTTP requests intercepted, uses 1440px desktop and 390px mobile viewports, and separately disables JavaScript for native navigation. It checks final-section tracking, focus transfer, disclosure/Escape, whole-page overflow, reduced-motion scrolling/layout transitions, selection colors, hidden print navigation/source controls and visible print explanation details.
+Fresh desktop/mobile screenshots were inspected: `/tmp/documentation-business-process-desktop.png` and `/tmp/documentation-business-process-mobile.png`. All four documents have `/tmp/documentation-*-desktop.png`, `/tmp/documentation-*-mobile.png` and `/tmp/documentation-*.pdf` artifacts. Diagram overflow is local rather than shrinking labels; bpmn.io attribution remains visible.
 
-Generated inspection artifacts: `/tmp/documentation-*-desktop.png`, `/tmp/documentation-*-mobile.png`, `/tmp/documentation-selection.png`, and `/tmp/documentation-*.pdf`. These are local verification artifacts, not shipped runtime dependencies. Screenshots were inspected for content hierarchy, readable copy, sidebar clearance, native-flow selection and real UML/BPMN rendering.
-
-Integration checks caught and fixed the standard bpmn-js SVG-header compatibility case, reduced-motion selector specificity, print gutters/source visibility, and semantic figcaption placement. Source files remain editable; generated SVG IDs are isolated and diagram-source downloads require no network.
+Browser acceptance uses 1440px desktop and 390px mobile viewports, reduced motion, blocked HTTP, and a separate no-JavaScript context. It awaits `window.bpmnDiagramsReady` before asserting successful BPMN rendering or exporting PDFs. These artifacts and Chromium are development evidence, not reader dependencies.
 
 ## Explicit limits
 
-- PlantUML needs only Node and its pinned JS/WASM dependencies, not Java or Chromium. BPMN still requires Chromium. Other OS/browser combinations were not exercised here.
-- PlantUML worker heap and WASM growth caps are not an OS-level total RSS ceiling; the renderer is not a sandbox for arbitrary JavaScript.
-- Chromium requires Playwright's supported host libraries; this environment uses headless `--no-sandbox` with renderer network requests blocked.
-- Advanced BPMN requires complete explicit DI. Hidden subprocess contents, multiple diagrams and incomplete rendering are rejected.
-- PlantUML accepts a conservative safe subset: no includes, preprocessors, external images, custom skins or pagination. Directive-like text in labels/comments may also be rejected.
-- A renderer producing valid SVG does not establish business validity or implementation conformance.
-- Work is on `feat/document-design-system` in the dedicated linked worktree. No push, delivery merge or deployment was performed.
+- BPMN visuals require JavaScript in the reader browser. Without it, explanatory content and downloadable source remain, but there is no pre-rendered BPMN image fallback. PlantUML remains static SVG.
+- Native Ctrl+P cannot await asynchronous rendering; wait until diagrams appear. Pending/error text is printed rather than an unexplained blank. Automated exports should await readiness and check every result's `ok`.
+- Reader timeout handles asynchronous delays but cannot interrupt synchronous main-thread work. Source/element/SVG caps reduce this risk; Node preparation and PlantUML workers have cancellable deadlines. Heap/WASM growth caps are not an OS-level RSS ceiling.
+- Other OS/browser combinations were not exercised; reader verification here used Chromium. Browser-test tooling requires supported host libraries and uses `--no-sandbox` on this host.
+- Advanced BPMN needs complete explicit DI. Hidden subprocess contents, incomplete diagrams and unsupported auto-layout constructs are rejected.
+- PlantUML's conservative safe subset excludes includes, preprocessors, resource loading, custom skins and pagination.
+- A valid rendering does not establish that a business model or implementation is correct.
+- Changes remain on `feat/document-design-system`. No push, merge or deployment was performed.

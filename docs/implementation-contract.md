@@ -14,7 +14,7 @@ Figure source syntax:
   <figcaption>Request and response, including the rejection path.</figcaption>
 </figure>
 ```
-Same for `data-diagram="bpmn"`, `.bpmn` XML. Source path must remain within document workspace. Builder renders, sanitizes and namespaces SVG, adds local diagram scroll wrapper and expandable escaped source. User's .puml/.bpmn sources remain editable. No public server or runtime downloads.
+Same for `data-diagram="bpmn"`, `.bpmn` XML. Source path must remain within document workspace. Builder renders PlantUML SVG and prepares BPMN XML/DI without a browser. Embedded reader code renders/sanitizes/namespaces BPMN SVG; both use local scroll wrappers and escaped downloadable source. User's .puml/.bpmn sources remain editable. No public server or runtime downloads.
 
 Build: `node scripts/document.mjs build <directory> --out <report.html>`. Core reads canonical `assets/theme.css`, `assets/navigation.js`, creates shell/nav/h1, builds figures, validates content and writes atomically. Scaffold and build resolve assets from installed skill directory, not cwd. Source files and output must not collide. Output standalone/offline. Generated reference `assets/explanatory-page-template.html` stays available; parent will regenerate from canonical sources. Shared manifest/package scripts and Python validator are parent-owned.
 
@@ -33,10 +33,14 @@ Files: `scripts/renderers/plantuml.mjs`, `tests/plantuml.test.mjs`, `tests/fixtu
 Export `async function renderPlantUml(source, options = {})` -> `{ svg: string, source: string, extension: 'puml', warnings: string[] }`.
 Options `{ toolkitRoot?: string, timeoutMs?: number }`; bounded source/output/runtime. Runtime is the pinned TeaVM engine from `@plantuml/mcp-js/engine.js` plus `@viz-js/viz` in a cancellable Node worker. Never import/start the MCP server. No Java/JRE/JAR, native Graphviz, Java environment overrides or fallback. Shared compact monochrome style. Raw source retained; reject remote/local includes or unsafe preprocessors and block network. Real tests for all seven diagram families and errors. Returned SVG is raw; parent calls central sanitizer. Worker ownership includes `scripts/renderers/plantuml-worker.mjs` if needed; parent owns dependencies and integration.
 
-### BPMN worker
-Files: `scripts/renderers/bpmn.mjs`, `tests/bpmn.test.mjs`, `tests/fixtures/bpmn/*` only.
-Export `async function renderBpmn(source, options = {})` -> `{ svg: string, source: string, extension: 'bpmn', warnings: string[] }`.
-Options same. Prefer returning laid-out XML as source when DI added, so retained downloadable source is editable with layout; indicate warning. bpmn-js and bpmn-auto-layout ready. Chromium under `.tools/ms-playwright` (playwright 1.63.0); configure local runtime path without internet. Browser local blank page, no remote requests. Reject malformed XML/DOCTYPE/entities, meaningful import failures, unrendered/unlaid elements. Supported missing-DI processes autolayout; collaborations/lanes unsupported by auto-layout must be explicit actionable failures or supplied-DI examples, not silently dropped. Provide real fixtures for happy simple autolayout and advanced explicit-DI collaboration/lane/message/timer where library supports. Monochrome style preserving notation meaning. Returned SVG raw; parent sanitizes. Existing deps may be used; no manifest/core edits.
+### BPMN preparation worker
+Files: `scripts/renderers/bpmn.mjs`, optional `scripts/renderers/bpmn-layout-worker.mjs`, `tests/bpmn.test.mjs` only; fixtures read-only.
+Export `async function prepareBpmn(source, options = {})` -> `{ source: string, extension: 'bpmn', warnings: string[] }` (no SVG).
+Validate XML/DOCTYPE/entities, malformed references, DI bounds/completeness and supported model limits in Node; never import Playwright. Use cancellable auto-layout for supported missing-DI single processes. Return generated DI in source, leaving authored files untouched. Preserve colors in source. Reject advanced missing-DI content, partial diagrams and hidden subprocess contents rather than dropping semantics.
+
+### BPMN reader worker
+Files: `assets/bpmn-runtime.js`, `tests/bpmn-browser.test.mjs` only.
+Reader locates `[data-bpmn-runtime]`, reads escaped XML from the code element named by `data-bpmn-source-id`, and renders using embedded `window.BpmnJS` with `window.DOMPurify`. No CDN/fetch. Validate import/render coverage; sanitize and namespace static SVG, apply monochrome styling, destroy viewer resources and retain required bpmn.io watermark. Localized pending/error/no-JS feedback and sources remain available. Set viewport `data-bpmn-state` to `ready` or `error`; expose `window.bpmnDiagramsReady` resolving `{ok,error?}[]`. Print callers must await readiness; native Ctrl+P may print visible pending/error feedback.
 
 ### SVG embedding (parent-owned; four-worker concurrency limit)
 Files: `scripts/renderers/svg.mjs`, `tests/svg.test.mjs` only.
@@ -46,7 +50,7 @@ Export `function prepareSvg(rawSvg, { prefix, title })` -> safe namespaced SVG s
 Owns `scripts/document.mjs`, `scripts/lib/*`, setup/doctor scripts, package manifests, shell assembly, scaffold starters, `examples/*`, build/unit/browser tests outside above worker files, README, SKILL.md, Python validator, issue updates and all commits.
 
 ## Prepared tooling
-Node24; pinned deps in package.json/lock. Local JRE/JAR and archive removed at user request. PlantUML runs in Node with its JS/WASM dependencies. BPMN browser root `.tools/ms-playwright`; executable resolved via Playwright's platform/revision-specific path. Host requires `--no-sandbox` for local Chromium. Renderer tests must use memory or temporary local files and block network. No binaries or node_modules committed.
+Node24; pinned deps in package.json/lock. Local JRE/JAR and archive removed at user request. PlantUML runs in Node with its JS/WASM dependencies. Builds need neither a browser cache nor the Playwright package. Default setup installs production npm dependencies only. Optional development browser tests use `.tools/ms-playwright` and `--no-sandbox` on this host. Renderer tests must use memory or temporary local files and block network. No binaries or node_modules committed.
 
 ## Verification/handoff
 Workers run focused tests and report conclusion first, changed files, commands/results, limitations, recommended next step. No Git commits or issue operations. Main integrates and verifies three complete documents plus catalog offline/desktop/mobile/print and records evidence/commits in issue #1. Never mark business correctness proven; syntax/rendering checks suffice.

@@ -17,7 +17,7 @@ Resolve every path below relative to this skill's directory, wherever it was ins
    node /path/to/skill/scripts/setup.mjs
    node /path/to/skill/scripts/document.mjs doctor
    ```
-   Setup downloads pinned tooling; builds do not. For text/native-flow and PlantUML documents, `setup.mjs --npm` is sufficient. PlantUML uses JavaScript/WASM, not Java; only BPMN needs Chromium. For diagrams and platform limitations, read [rendering.md](references/rendering.md).
+   Setup installs pinned production npm dependencies only; builds never download. Neither Java nor Chromium is needed. PlantUML renders in Node; BPMN renders from embedded JavaScript when the reader opens the HTML in an ordinary browser. For diagrams and platform limitations, read [rendering.md](references/rendering.md).
 3. Scaffold in a **new directory**:
    ```sh
    node /path/to/skill/scripts/document.mjs create /path/to/document \
@@ -33,7 +33,7 @@ Resolve every path below relative to this skill's directory, wherever it was ins
    Open the result locally. Check wide/narrow screens, diagrams, navigation, keyboard focus and print. A successful build verifies structure/rendering, **not business correctness**.
 6. Deliver the HTML and keep the source directory available for editing. Each rendered diagram includes an expandable, downloadable source. No server is required to read the result.
 
-Create refuses an existing directory. Build replaces only the explicitly named output, atomically after successful rendering; it must not overwrite source files. Do not bypass errors with hand-authored renderer SVG or remote rendering services.
+Create refuses an existing directory. Build replaces only the explicitly named output, atomically after source validation, PlantUML rendering and BPMN preparation; it must not overwrite source files. Do not bypass errors with hand-authored renderer SVG or remote rendering services.
 
 ## Author content, not a document framework
 
@@ -73,7 +73,7 @@ Declare a source-backed figure in content:
 </figure>
 ```
 
-For BPMN use `data-diagram="bpmn"` and a `.bpmn` source. Paths stay inside the document directory. The builder renders locally, sanitizes and isolates SVG IDs, and embeds the result. Preserve notation semantics; use text to explain what the diagram leaves out. Missing-DI BPMN auto-layout has explicit limits: use supplied DI for advanced models, rather than silently dropping unsupported elements. Never upload private diagram sources to a public service.
+For BPMN use `data-diagram="bpmn"` and a `.bpmn` source. Paths stay inside the document directory. PlantUML SVG is rendered/sanitized during the build. BPMN XML is validated/laid out in Node, retained as escaped text, and rendered/sanitized by an embedded viewer in the reader's browser. Both paths isolate SVG IDs; neither uses a CDN. BPMN requires reader JavaScript: keep the visible no-JS/error fallback and source downloads. Wait for BPMN diagrams before printing; automated exports can await `window.bpmnDiagramsReady`. Preserve notation semantics; use text to explain what the diagram leaves out. Missing-DI BPMN auto-layout has explicit limits: use supplied DI for advanced models, rather than silently dropping unsupported elements. Never upload private diagram sources to a public service.
 
 ## Reuse and maintenance
 

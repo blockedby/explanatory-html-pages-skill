@@ -9,6 +9,8 @@ export const messages = {
   ru: { topics: 'Разделы', sections: 'Разделы документа', onPage: 'На этой странице', open: 'Открыть разделы', close: 'Свернуть разделы', skip: 'К содержимому', source: 'Исходник диаграммы', download: 'Скачать исходник', scroll: 'Диаграмма; прокручивайте по горизонтали для просмотра', footer: 'Документ / справочник' }
 };
 const icon = '<span class="topic-icon" aria-hidden="true"><svg class="menu-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg><svg class="panel-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></span>';
+// Trusted library code is inline; source XML is only ever stored as escaped text.
+const inlineScript = code => code.replace(/<\/script/gi, '<\\/script').replace(/\/\/[#@]\s*sourceMappingURL=.*$/gm, '');
 const closeIcon = '<span class="topic-close" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m8 10 4 4 4-4"/></svg></span>';
 
 export async function buildDocument(directory, { out } = {}) {
@@ -23,6 +25,7 @@ export async function buildDocument(directory, { out } = {}) {
   const protectedPaths = [metadataPath, contentPath];
   const warnings = [];
   let count = 0;
+  let hasBpmn = false;
   for (const figure of document.querySelectorAll('[data-diagram]')) {
     if (figure.localName !== 'figure') throw new Error('data-diagram belongs on a <figure> with a caption.');
     const kind = figure.dataset.diagram;
@@ -37,7 +40,7 @@ export async function buildDocument(directory, { out } = {}) {
     const source = await readFile(filename, 'utf8');
     const renderer = kind === 'plantuml'
       ? (await import('../renderers/plantuml.mjs')).renderPlantUml
-      : (await import('../renderers/bpmn.mjs')).renderBpmn;
+      : (await import('../renderers/bpmn.mjs')).prepareBpmn;
     let rendered;
     try { rendered = await renderer(source, { toolkitRoot }); }
     catch (error) { throw new Error(`${figure.dataset.source}: ${error.message}`, { cause: error }); }
@@ -46,14 +49,30 @@ export async function buildDocument(directory, { out } = {}) {
     for (const node of document.querySelectorAll('[id]')) {
       if (node.id.startsWith(`${prefix}-`)) throw new Error(`Reserved diagram ID prefix: ${prefix}-`);
     }
-    const svg = prepareSvg(rendered.svg, { prefix, title: caption.textContent.trim() });
+    const isBpmn = kind === 'bpmn';
+    hasBpmn ||= isBpmn;
     warnings.push(...(rendered.warnings || []).map(warning => `${figure.dataset.source}: ${warning}`));
     const viewport = document.createElement('div');
     viewport.className = 'diagram-viewport';
     viewport.setAttribute('tabindex', '0');
     viewport.setAttribute('role', 'region');
     viewport.setAttribute('aria-label', `${text.scroll}: ${caption.textContent.trim()}`);
-    viewport.innerHTML = svg;
+    if (isBpmn) {
+      viewport.dataset.bpmnRuntime = '';
+      viewport.dataset.bpmnSourceId = `${prefix}-source`;
+      viewport.dataset.bpmnTitle = caption.textContent.trim();
+      viewport.dataset.bpmnState = 'pending';
+      const status = document.createElement('p');
+      status.className = 'diagram-status';
+      status.setAttribute('role', 'status');
+      status.textContent = metadata.lang === 'ru' ? 'Диаграмма BPMN появится при открытии HTML с включённым JavaScript. Перед печатью дождитесь её загрузки.' : 'The BPMN diagram renders when this HTML is opened with JavaScript enabled. Wait for it before printing.';
+      viewport.append(status);
+      const fallback = document.createElement('noscript');
+      fallback.textContent = metadata.lang === 'ru' ? 'Для отображения BPMN включите JavaScript. Исходник доступен ниже.' : 'Enable JavaScript to display BPMN. The diagram source is available below.';
+      viewport.append(fallback);
+    } else {
+      viewport.innerHTML = prepareSvg(rendered.svg, { prefix, title: caption.textContent.trim() });
+    }
     figure.prepend(viewport);
     figure.classList.add('diagram-rendered');
     figure.removeAttribute('data-diagram');
@@ -65,6 +84,7 @@ export async function buildDocument(directory, { out } = {}) {
     const pre = document.createElement('pre');
     const code = document.createElement('code');
     code.textContent = rendered.source;
+    if (isBpmn) code.id = `${prefix}-source`;
     pre.append(code);
     details.append(summary, pre);
     const download = document.createElement('a');
@@ -80,6 +100,16 @@ export async function buildDocument(directory, { out } = {}) {
     readFile(path.join(toolkitRoot, 'assets/components.css'), 'utf8'),
     readFile(path.join(toolkitRoot, 'assets/navigation.js'), 'utf8')
   ]);
+  let bpmnScripts = '';
+  if (hasBpmn) {
+    const bundles = await Promise.all([
+      readFile(path.join(toolkitRoot, 'node_modules/bpmn-js/dist/bpmn-viewer.production.min.js'), 'utf8'),
+      readFile(path.join(toolkitRoot, 'node_modules/dompurify/dist/purify.min.js'), 'utf8'),
+      readFile(path.join(toolkitRoot, 'assets/bpmn-runtime.js'), 'utf8')
+    ]);
+    const licenses = await Promise.all(['bpmn-js', 'dompurify'].map(async name => `${name}\n${await readFile(path.join(toolkitRoot, 'node_modules', name, 'LICENSE'), 'utf8')}`));
+    bpmnScripts = `<template data-bpmn-licenses>${e(licenses.join('\n\n'))}</template>` + bundles.map(bundle => `<script data-bpmn-library>\n${inlineScript(bundle)}\n</script>`).join('\n');
+  }
   const nav = topics.map((topic, index) => `<li><a href="#${e(encodeURIComponent(topic.id))}"><span class="toc-number" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span><span>${e(topic.title)}</span></a></li>`).join('\n');
   const html = `<!doctype html>
 <html lang="${metadata.lang}"><head>
@@ -96,7 +126,7 @@ export async function buildDocument(directory, { out } = {}) {
 <header class="site-header"><div class="page masthead-grid"><h1>${e(metadata.title)}</h1>${metadata.description ? `<p class="lead">${e(metadata.description)}</p>` : ''}</div></header>
 <main id="main-content" class="page document-content">${document.body.innerHTML}</main>
 <footer class="site-footer"><div class="page"><p class="footer-mark">${text.footer}</p></div></footer>
-</div><script>\n${navigation}\n</script></body></html>\n`;
+</div><script>\n${navigation}\n</script>${bpmnScripts}</body></html>\n`;
   const output = await atomicOutput(out, html, protectedPaths);
-  return { output, warnings, diagrams: count, sections: topics.length };
+  return { output, warnings, diagrams: count, sections: topics.length, browserRenderedBpmn: hasBpmn };
 }

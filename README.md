@@ -33,12 +33,12 @@ node /path/to/skill/scripts/document.mjs build ./order-guide \
   --out ./order-guide/report.html
 ```
 
-Open `report.html` directly. It contains its theme, navigation and static SVG, so readers need no server, runtime tooling or internet connection. Editable diagram sources are retained and downloadable from the document.
+Open `report.html` directly in an ordinary browser. Theme, navigation, PlantUML SVG, BPMN sources and its browser renderer are embedded—no server, extra installation, CDN or internet connection. BPMN appears after local JavaScript rendering; without JavaScript its source and an explanatory fallback remain available. Wait for diagrams before printing. Editable sources are downloadable from the document.
 
 - Presets: `explainer`, `process`, `integration`.
 - Shell languages: English and Russian; content and labels are authored normally.
 - Create refuses existing directories. Build requires an explicit output and preserves the previous HTML on failure.
-- For text, native-flow and PlantUML documents, `setup.mjs --npm` is sufficient. No Java/JRE is required; only BPMN needs Chromium.
+- Default setup (or `setup.mjs --npm`) installs only authoring npm dependencies. No Java/JRE or Chromium is needed for any document build.
 
 ## What is reusable
 
@@ -48,7 +48,8 @@ Open `report.html` directly. It contains its theme, navigation and static SVG, s
 | `assets/components.css`, `assets/components/` | Definitions, steps, comparisons, notes, scenarios, scope, actors, rules, requirements, contracts, mappings and analysis tables |
 | `assets/starters/` | Plain semantic HTML and editable diagram sources; no bespoke document DSL |
 | `scripts/document.mjs` | Scaffold, validation, generated navigation and atomic standalone build |
-| `scripts/renderers/` | Local PlantUML and BPMN rendering plus safe SVG embedding |
+| `scripts/renderers/` | Local PlantUML rendering, browser-free BPMN preparation and safe SVG embedding |
+| `assets/bpmn-runtime.js` | Offline reader-browser BPMN rendering, SVG isolation and loading/error states |
 
 Compact presentation does not mean shallow explanation. Components are choices, not a checklist that every document must contain. The skill chooses a useful structure and notation without compulsory interviews or approval gates.
 
@@ -65,11 +66,11 @@ Download or open HTML locally; GitHub's file viewer displays source. `assets/exp
 
 ## Diagram choices and limits
 
-Use native markup for short conceptual flows, PlantUML for UML/technical relationships, and actual BPMN 2.0 XML for business-process notation. Renderers run locally; private sources are never sent to public diagram services. Finished documents contain static SVG, not client-side modeling libraries.
+Use native markup for short conceptual flows, PlantUML for UML/technical relationships, and actual BPMN 2.0 XML for business-process notation. PlantUML renders at build time; BPMN renders in the reader's browser from its embedded production viewer. Private sources never go to public diagram services. No editor or process engine is embedded.
 
 Simple missing-DI BPMN processes can be auto-laid out. Advanced collaborations, lanes, message flows and subprocesses require complete supplied DI. Unsupported/incomplete rendering fails explicitly instead of silently discarding notation. This toolkit is not a process execution engine and does not certify business correctness.
 
-PlantUML uses the official TeaVM JavaScript engine plus Viz.js WASM in Node workers—no JRE, JAR, native Graphviz or MCP server. Chromium is only needed for BPMN and requires a Playwright-supported platform and system libraries. Builds never install or download dependencies implicitly. See [rendering and troubleshooting](references/rendering.md).
+PlantUML uses the official TeaVM JavaScript engine plus Viz.js WASM in Node workers—no JRE, JAR, native Graphviz or MCP server. BPMN is prepared in Node and displayed by embedded bpmn-js in the reader's ordinary browser. Playwright/Chromium are optional development-test tools only. Builds never install or download dependencies implicitly. See [rendering and troubleshooting](references/rendering.md).
 
 ## Authoring references
 
@@ -84,15 +85,17 @@ PlantUML uses the official TeaVM JavaScript engine plus Viz.js WASM in Node work
 npm run setup
 npm test
 npm run build:examples
+# Optional maintainer browser checks (not needed to build documents):
+node scripts/setup.mjs --npm --browser
 npm run test:browser
 npm run validate
 git diff --check
 ```
 
-Unit/integration tests cover scaffold safety, metadata, Unicode IDs, source paths, atomic output, SVG isolation, real PlantUML/BPMN rendering and renderer failures. Browser tests open built files offline, check desktop/mobile navigation, keyboard focus, overflow and print, and write screenshots/PDFs under `/tmp`. Python validation checks skill packaging, HTML structure and drift from canonical assets without installing another Python dependency.
+Unit/integration tests cover scaffold safety, metadata, Unicode IDs, source paths, atomic output, SVG isolation, real PlantUML rendering, browser-free BPMN validation/layout and renderer failures. Browser tests exercise reader-side BPMN rendering and open built files offline, checking no-JS fallbacks, desktop/mobile navigation, keyboard focus, overflow and print, and write screenshots/PDFs under `/tmp`. Python validation checks skill packaging, HTML structure and drift from canonical assets without installing another Python dependency.
 
 Change the canonical assets or component snippets, then run `npm run build:examples`. Do not patch generated HTML to fix a theme issue.
 
 ## License
 
-MIT for this repository. PlantUML, Viz.js, Chromium and npm dependencies retain their respective upstream licenses; dependencies are installed locally, not redistributed in this repository. Final exported diagrams do not include the renderer programs.
+MIT for this repository's original code. Upstream dependencies retain their own licenses. BPMN HTML redistributes the bpmn-js production viewer and DOMPurify with license notices; the bpmn.io watermark must remain visible. PlantUML engines and optional test-browser binaries are not embedded in documents.

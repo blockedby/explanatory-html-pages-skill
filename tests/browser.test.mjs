@@ -20,6 +20,23 @@ test('standalone examples remain usable offline on desktop, mobile and print', a
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.goto(pathToFileURL(path.join(toolkitRoot, 'examples', `${name}.html`)).href);
     await page.locator('main section').first().waitFor();
+    if (name === 'business-process') {
+      const results = await page.evaluate(() => window.bpmnDiagramsReady);
+      assert.equal(results?.length, 2, 'both BPMN diagrams render in the reader browser');
+      assert.ok(results.every(result => result.ok), JSON.stringify(results));
+      assert.equal(await page.locator('[data-bpmn-state="ready"] > svg').count(), 2);
+      assert.equal(await page.locator('[data-bpmn-state="error"]').count(), 0);
+      assert.equal(await page.locator('.bpmn-attribution .bjs-powered-by').count(), 2, 'retain required upstream attribution');
+      for (const logo of await page.locator('.bpmn-attribution .bjs-powered-by').all()) {
+        assert.equal(await logo.isVisible(), true);
+        assert.equal(await logo.evaluate(node => {
+          const box = node.getBoundingClientRect();
+          const viewport = node.closest('figure').querySelector('.diagram-viewport').getBoundingClientRect();
+          const figure = node.closest('figure').getBoundingClientRect();
+          return box.width > 0 && box.height > 0 && box.top >= viewport.bottom && box.left >= figure.left && box.right <= figure.right;
+        }), true, 'watermark must be visible without overlapping the diagram');
+      }
+    }
     await page.waitForFunction(() => document.querySelector('.topic-toggle').hasAttribute('aria-label'));
     assert.equal(await page.locator('h1').count(), 1, name);
     assert.equal(await page.locator('#topic-panel').evaluate(node => node.open), true, name);
@@ -86,4 +103,10 @@ test('native topics remain available with JavaScript disabled', async t => {
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await page.waitForURL(/#model$/);
   assert.match(page.url(), /#model$/);
+  await page.goto(pathToFileURL(path.join(toolkitRoot, 'examples/business-process.html')).href);
+  assert.equal(await page.locator('[data-bpmn-runtime] svg').count(), 0);
+  assert.equal(await page.locator('[data-bpmn-runtime] noscript').count(), 2);
+  assert.ok(await page.locator('[data-bpmn-runtime] noscript').first().isVisible());
+  assert.match(await page.locator('.diagram-source code').first().textContent(), /BPMNDiagram/);
+  assert.equal(await page.locator('.diagram-source a[download]').count(), 2);
 });

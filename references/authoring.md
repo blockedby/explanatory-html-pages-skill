@@ -54,7 +54,7 @@ Tables should explain fields or decisions, not create page layout. Supply a capt
 </figure>
 ```
 
-A source-backed figure contains only its caption. Rendering inserts the SVG, an accessible scroll region, and an expandable source with an offline download link. The build preserves original source files. If BPMN auto-layout adds DI, the embedded/downloadable XML includes that layout; the authored file is not changed. Read [rendering.md](rendering.md) for prerequisites and limits.
+A source-backed figure contains only its caption. PlantUML SVG is inserted during the build. BPMN is prepared in Node and drawn by embedded JavaScript when the reader opens the HTML. Both use an accessible scroll region and an expandable source with an offline download link. BPMN shows a no-JS/error fallback rather than an empty figure; wait for rendering before printing. The build preserves original source files. If BPMN auto-layout adds DI, the embedded/downloadable XML includes that layout; the authored file is not changed. Read [rendering.md](rendering.md) for prerequisites and limits.
 
 Use a caption to interpret the important relationship or boundary. Avoid captions that merely repeat “Diagram.” The explanatory text must still make sense when the reader does not inspect every symbol.
 

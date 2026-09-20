@@ -11,7 +11,8 @@ const help = `Documentation toolkit — reuse the theme, author the content.
 Edit document.json, content.html and diagrams/ in the created directory.
 No CSS, page shell, navigation or framework authoring is needed.
 Create refuses existing directories. Build replaces only its explicit output file.
-Run 'node scripts/setup.mjs' once to install local rendering dependencies.
+Run 'node scripts/setup.mjs' once to install npm dependencies (no Java or browser download).
+BPMN diagrams render in the reader browser, offline, with JavaScript enabled.
 `;
 export async function main(argv = process.argv.slice(2)) {
   if (!argv.length || argv.includes('--help') || argv[0] === 'help') { console.log(help); return; }
@@ -44,7 +45,8 @@ export async function main(argv = process.argv.slice(2)) {
   } else {
     const { buildDocument } = await import('./lib/build.mjs');
     const result = await buildDocument(directory, options);
-    console.log(`Built: ${result.output}\nSections: ${result.sections}; diagrams: ${result.diagrams}\nDependencies at reading time: none`);
+    console.log(`Built: ${result.output}\nSections: ${result.sections}; diagrams: ${result.diagrams}\nExternal dependencies at reading time: none`);
+    if (result.browserRenderedBpmn) console.log('BPMN renders locally in the reader browser with JavaScript enabled. Wait for diagrams before printing.');
     for (const warning of result.warnings) console.warn(`Note: ${warning}`);
   }
 }

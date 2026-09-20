@@ -117,7 +117,11 @@ def parse_html(path: Path, errors: list[str]) -> StrictHTMLParser | None:
     if not text:
         return None
 
-    check_markers(path, text, errors)
+    # Bundled renderer code/CSS is executable syntax, not unfinished author prose.
+    prose = re.sub(r"<(script|style)\b[^>]*>.*?</\1\s*>",
+                   lambda match: "\n" * match.group(0).count("\n"), text,
+                   flags=re.IGNORECASE | re.DOTALL)
+    check_markers(path, prose, errors)
     if not re.match(r"\s*<!doctype\s+html\s*>", text, re.IGNORECASE):
         errors.append(f"{display_path(path)}: missing HTML5 doctype")
 
@@ -268,6 +272,7 @@ def check_repository_files(errors: list[str]) -> None:
         "assets/theme.css",
         "assets/components.css",
         "assets/navigation.js",
+        "assets/bpmn-runtime.js",
         "package.json",
         "package-lock.json",
         "references/authoring.md",

@@ -91,7 +91,7 @@ Use source figures, not pasted renderer output:
 </figure>
 ```
 
-For BPMN, use `data-diagram="bpmn"` and a `.bpmn` XML file. Paths must remain within the document workspace. The builder renders, sanitizes and namespaces SVG, adds local scrolling and expandable escaped source, and keeps the original diagram files editable. There is no public rendering server or runtime download. See [notations](notations.md) for choosing a notation and concrete source examples.
+For BPMN, use `data-diagram="bpmn"` and a `.bpmn` XML file. Paths must remain within the document workspace. PlantUML SVG is rendered during the build; BPMN renders from embedded code in the reader browser. Both paths sanitize and namespace SVG, provide local scrolling and expandable escaped source, and keep original diagram files editable. No installed browser is needed to build; BPMN needs JavaScript when reading. There is no public rendering server or runtime download. See [notations](notations.md) for choosing a notation and concrete source examples.
 
 ## Checks and limits
 

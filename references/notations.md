@@ -40,7 +40,7 @@ Save the following PlantUML example as `exchange-guide/diagrams/exchange.puml`, 
 
 Paths are relative to the document workspace and must stay inside it. Keep build output separate from source HTML, metadata, and diagram files. Do not put raw SVG, rendered-image URLs, or renderer scripts into the figure.
 
-The builder renders locally, sanitizes and namespaces SVG, adds a keyboard-focusable local scroll wrapper and expandable escaped source, and embeds the result in a standalone offline page. The original `.puml` and `.bpmn` files remain editable. No public server or runtime downloads are required. Local rendering tools must be installed by the toolkit setup; missing or unsupported tooling should be surfaced rather than bypassed with a remote renderer.
+PlantUML renders during the build; BPMN is validated/laid out in Node and rendered by an embedded viewer in the reader browser. Both paths sanitize and namespace SVG and use a keyboard-focusable local scroll wrapper with expandable escaped source. The result remains a standalone offline page, but BPMN needs reader JavaScript. The original `.puml` and `.bpmn` files remain editable. No public server or runtime downloads are required. Toolkit setup installs npm packages only, not Java or Chromium. Missing or unsupported tooling must be surfaced rather than bypassed with a remote renderer.
 
 ## PlantUML: show the interaction
 

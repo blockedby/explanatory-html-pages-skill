@@ -394,6 +394,10 @@ figure.diagram-rendered { margin: 1rem 0; padding: 1rem; border: 2px solid var(-
 /* Preserve renderer dimensions: large diagrams scroll locally rather than shrinking labels. */
 .diagram-viewport > svg { display: block; max-width: none; flex-shrink: 0; margin-inline: auto; }
 main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
+.bpmn-attribution { position: relative; min-height: 3.25rem; margin-top: -0.5rem; }
+.diagram-status { margin: 0; padding: 0.75rem; border-left: 3px solid var(--line); color: var(--muted); font-size: 1rem; }
+[data-bpmn-state="pending"] { min-height: 8rem; }
+[data-bpmn-state="error"] .diagram-status { color: var(--ink); font-weight: 700; }
 .diagram-source { margin-top: 1rem; border-top: 1px solid var(--rule); }
 .diagram-source summary { padding-block: 0.75rem; cursor: pointer; font-weight: 700; }
 .diagram-source pre { margin: 0; font-size: 1rem; }
