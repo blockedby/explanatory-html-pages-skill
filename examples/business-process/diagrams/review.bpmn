@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="ReviewDefinitions" targetNamespace="urn:documentation:review">
+  <bpmn:process id="ReviewProcess" isExecutable="false">
+    <bpmn:startEvent id="Submitted" name="Заявка отправлена"><bpmn:outgoing>f1</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:userTask id="Check" name="Проверить комплектность"><bpmn:incoming>f1</bpmn:incoming><bpmn:outgoing>f2</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Complete" name="Комплект полный?"><bpmn:incoming>f2</bpmn:incoming><bpmn:outgoing>f3</bpmn:outgoing><bpmn:outgoing>f4</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Clarify" name="Вернуть на уточнение"><bpmn:incoming>f3</bpmn:incoming></bpmn:endEvent>
+    <bpmn:userTask id="Decide" name="Рассмотреть расход"><bpmn:incoming>f4</bpmn:incoming><bpmn:outgoing>f5</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Decision" name="Согласовано?"><bpmn:incoming>f5</bpmn:incoming><bpmn:outgoing>f6</bpmn:outgoing><bpmn:outgoing>f7</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Approved" name="Согласовано"><bpmn:incoming>f6</bpmn:incoming></bpmn:endEvent>
+    <bpmn:endEvent id="Rejected" name="Отклонено с причиной"><bpmn:incoming>f7</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="f1" sourceRef="Submitted" targetRef="Check"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="Check" targetRef="Complete"/>
+    <bpmn:sequenceFlow id="f3" name="Нет" sourceRef="Complete" targetRef="Clarify"/>
+    <bpmn:sequenceFlow id="f4" name="Да" sourceRef="Complete" targetRef="Decide"/>
+    <bpmn:sequenceFlow id="f5" sourceRef="Decide" targetRef="Decision"/>
+    <bpmn:sequenceFlow id="f6" name="Да" sourceRef="Decision" targetRef="Approved"/>
+    <bpmn:sequenceFlow id="f7" name="Нет" sourceRef="Decision" targetRef="Rejected"/>
+  </bpmn:process>
+</bpmn:definitions>

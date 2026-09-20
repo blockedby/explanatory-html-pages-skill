@@ -1,0 +1,18 @@
+@startuml
+actor "Пользователь" as User
+participant "Браузер" as Browser
+participant "API заказов" as API
+database "Хранилище" as Store
+User -> Browser: Открыть заказ
+Browser -> API: GET /orders/42
+API -> API: Проверить права
+alt Доступ разрешён
+  API -> Store: Прочитать заказ 42
+  Store --> API: Данные заказа
+  API --> Browser: 200 + представление заказа
+  Browser --> User: Показать заказ
+else Доступ запрещён
+  API --> Browser: 403 без данных заказа
+  Browser --> User: Объяснить отказ
+end
+@enduml

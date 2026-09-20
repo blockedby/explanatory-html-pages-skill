@@ -1,0 +1,310 @@
+<!-- Generated from assets/components/*.html by scripts/build-examples.mjs. -->
+<section id="catalog-1-reservation-contract"><p class="section-kicker">assets/components/api-event-contract.html</p>
+  <h2>Reservation API and creation event</h2>
+  <p>This illustrative contract separates a synchronous outcome from asynchronous delivery. Receiving an event is not required before checkout can use the API response.</p>
+  <h3>Create a hold · <code>POST /v1/reservations</code></h3>
+  <dl class="doc-facts">
+    <dt>Caller and authorization</dt><dd>Checkout uses a service access token with <code>inventory:reserve</code>. Inventory derives the owning client from the token, not from the JSON body.</dd>
+    <dt>Input</dt><dd><code>Content-Type: application/json</code>; required fields <code>sku</code> (nonempty case-sensitive string) and <code>quantity</code> (integer 1–100). Unknown fields are rejected.</dd>
+    <dt>Idempotency</dt><dd>Required <code>Idempotency-Key</code> is scoped to client and endpoint. Completed outcomes are retained for 24 hours. Identical retries replay the status and body; changed input returns <code>409 idempotency_conflict</code>. Concurrent duplicates wait for the first result.</dd>
+    <dt>Retry</dt><dd>On a lost response or a <code>503</code>, retry with the same key and payload using bounded exponential backoff. A replay does not renew the ten-minute hold; inspect its expiry before payment.</dd>
+  </dl>
+  <pre class="doc-payload"><code>{"sku":"SKU-42","quantity":2}</code></pre>
+  <div class="doc-table-scroll" role="region" aria-label="Create reservation responses" tabindex="0">
+    <table class="doc-table">
+      <caption>Response outcomes</caption>
+      <thead><tr><th scope="col">HTTP status</th><th scope="col">Meaning</th><th scope="col">Caller action</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">201</th><td>Hold committed; body below.</td><td>Continue to payment before expiry.</td></tr>
+        <tr><th scope="row">400</th><td><code>invalid_request</code>; malformed input or missing key.</td><td>Correct the request; do not retry unchanged.</td></tr>
+        <tr><th scope="row">401 / 403</th><td>Invalid credentials / missing scope.</td><td>Repair service authentication or permissions.</td></tr>
+        <tr><th scope="row">404</th><td><code>unknown_sku</code>.</td><td>Refresh the basket item.</td></tr>
+        <tr><th scope="row">409</th><td><code>insufficient_stock</code> or <code>idempotency_conflict</code>.</td><td>Reduce quantity or resolve key reuse; do not blindly retry.</td></tr>
+        <tr><th scope="row">503</th><td><code>temporarily_unavailable</code>; outcome may be unknown to the caller.</td><td>Retry with the same key to discover the committed outcome.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Successful response:</p>
+  <pre class="doc-payload"><code>{"reservation_id":"rsv_1042","state":"active","expires_at":"2026-05-01T10:10:00Z"}</code></pre>
+  <p>Domain errors use a stable machine code and a human-readable message:</p>
+  <pre class="doc-payload"><code>{"code":"insufficient_stock","message":"Only one unit is available."}</code></pre>
+  <h3>Event · <code>inventory.reservation.created.v1</code></h3>
+  <dl class="doc-facts">
+    <dt>Producer → consumer</dt><dd>Inventory → checkout projection, through an authenticated broker topic restricted to these services.</dd>
+    <dt>Publication</dt><dd>The hold and outbox entry commit together. The publisher retries until the broker acknowledges delivery.</dd>
+    <dt>Delivery</dt><dd>At least once; duplicates and delayed messages are possible. Consumers deduplicate by <code>event_id</code> and must not treat a delayed creation event as proof the hold is still active.</dd>
+    <dt>Compatibility</dt><dd>Consumers tolerate unknown additive fields. Changing the meaning or type of existing fields requires a new event version.</dd>
+    <dt>Failure handling</dt><dd>After five failed consumer attempts, quarantine the message for inspection and replay with its original event ID; alert the checkout service owner.</dd>
+  </dl>
+  <pre class="doc-payload"><code>{
+  "event_id": "evt_8801",
+  "type": "inventory.reservation.created.v1",
+  "occurred_at": "2026-05-01T10:00:00Z",
+  "data": {
+    "reservation_id": "rsv_1042",
+    "sku": "SKU-42",
+    "quantity": 2,
+    "expires_at": "2026-05-01T10:10:00Z"
+  }
+}</code></pre>
+</section>
+
+<section id="catalog-2-reservation-change"><p class="section-kicker">assets/components/as-is-to-be.html</p>
+  <h2>From stock lookup to a timed hold</h2>
+  <p>This illustrative change closes the gap between showing availability and claiming stock. It introduces expiry and retry handling rather than making the checkout process disappear.</p>
+  <div class="doc-change">
+    <div>
+      <h3>AS-IS · Check without holding</h3>
+      <ol>
+        <li>Checkout reads available stock.</li>
+        <li>The customer authorizes payment.</li>
+        <li>Checkout requests allocation; another customer may have taken the last unit.</li>
+      </ol>
+      <p><strong>Failure:</strong> payment may need to be voided because the earlier availability check was not a promise.</p>
+    </div>
+    <div>
+      <h3>TO-BE · Hold before payment</h3>
+      <ol>
+        <li>Checkout obtains a ten-minute reservation.</li>
+        <li>The customer authorizes payment while the hold is active.</li>
+        <li>Checkout confirms the hold; if it expired, checkout voids the authorization and offers a retry.</li>
+      </ol>
+      <p><strong>Trade-off:</strong> abandoned holds temporarily reduce availability and require reliable release.</p>
+    </div>
+  </div>
+  <h3>Transition and observation</h3>
+  <p>Route a checkout through either the old path or the hold path, never both. Both paths must use the same authoritative available-stock calculation. Track confirmation conflicts, expired holds, and payment voids before expanding rollout.</p>
+  <p><strong>Rollback boundary:</strong> stop creating new holds but continue confirming or releasing existing holds until none remain. Simply switching off Inventory would strand reserved units.</p>
+</section>
+
+<section id="catalog-3-reservation-open-points"><p class="section-kicker">assets/components/assumptions-questions.html</p>
+  <h2>Assumptions and unresolved questions</h2>
+  <p>These example notes distinguish a working assumption from a decision. Owners are responsible for supplying evidence, not merely marking a row complete.</p>
+  <div class="doc-table-scroll" role="region" aria-label="Assumptions and questions register" tabindex="0">
+    <table class="doc-table">
+      <caption>Uncertainty that could change the reservation design</caption>
+      <thead><tr><th scope="col">ID / kind</th><th scope="col">Statement or question</th><th scope="col">Impact</th><th scope="col">Owner / next evidence</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">A-01 · Assumption</th><td>All sellable quantities are whole units.</td><td>Weighted goods would require decimal quantity and unit-of-measure rules.</td><td>Catalog owner: check the active SKU export for weighted items before extending the API.</td></tr>
+        <tr><th scope="row">A-02 · Assumption</th><td>Ten minutes is enough to complete payment authorization.</td><td>Slow authorization could expire otherwise valid checkouts.</td><td>Payments owner: compare authorization duration and abandonment data; revisit the expiry policy if necessary.</td></tr>
+        <tr><th scope="row">Q-01 · Open question</th><td>Should a checkout reserve all basket lines atomically?</td><td>The current single-line API can leave a basket partially reserved.</td><td>Checkout owner: compare all-or-nothing and compensating-release scenarios with product operations.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Current boundary:</strong> this example documents single-line reservations only. It does not promise atomic reservation of a whole basket.</p>
+</section>
+
+<section id="catalog-4-reservation-comparison"><p class="section-kicker">assets/components/comparison.html</p>
+  <h2>A stock lookup and a reservation answer different questions</h2>
+  <div class="table-frame">
+    <table class="boundary-table">
+      <caption>Choose the operation by the promise the caller needs</caption>
+      <thead><tr><th scope="col">Dimension</th><th scope="col">Availability lookup</th><th scope="col">Reservation</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Dimension"><strong>Question</strong></td><td data-label="Availability lookup">How many units appear available now?</td><td data-label="Reservation">Can this checkout claim these units until its deadline?</td></tr>
+        <tr><td data-label="Dimension"><strong>State change</strong></td><td data-label="Availability lookup">None; another checkout may act immediately.</td><td data-label="Reservation">Creates a hold and reduces available stock.</td></tr>
+        <tr><td data-label="Dimension"><strong>Retry behavior</strong></td><td data-label="Availability lookup">Repeat the read; the value may have changed.</td><td data-label="Reservation">Reuse the idempotency key to avoid a second hold.</td></tr>
+        <tr><td data-label="Dimension"><strong>Use</strong></td><td data-label="Availability lookup">Inform browsing and product listings.</td><td data-label="Reservation">Protect the payment window during checkout.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="catalog-5-reservation-conclusion"><p class="section-kicker">assets/components/conclusions.html</p>
+  <h2>Keep the promise and its deadline together</h2>
+  <p>Use a lookup for information and a reservation for a temporary claim. Keep the reservation ID, expiry time, and retry key with the checkout attempt so recovery does not create a second claim.</p>
+  <div class="takeaway" role="note">
+    <span class="takeaway-label">Key conclusion</span>
+    <p><strong>A hold protects stock, not the whole purchase.</strong> Payment authorization, confirmation, and expiry still need explicit outcomes and recovery paths.</p>
+  </div>
+</section>
+
+<section id="catalog-6-reservation-definition"><p class="section-kicker">assets/components/definition.html</p>
+  <h2>A reservation is a temporary promise</h2>
+  <div class="definition">
+    <div>
+      <p class="important">A stock reservation temporarily removes units from what other checkouts may claim.</p>
+      <p class="definition-detail">It is not a completed sale. Confirmation turns the hold into an allocation; cancellation or expiry returns the units to availability. A payment authorization alone does not confirm the hold.</p>
+    </div>
+    <dl class="signal-list">
+      <div><dt>Claim</dt><dd>An item and a whole-unit quantity.</dd></div>
+      <div><dt>Deadline</dt><dd>Ten minutes from creation in this example.</dd></div>
+      <div><dt>Outcome</dt><dd>Confirmed allocation or released stock.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section id="catalog-7-reservation-delivery-detail"><p class="section-kicker">assets/components/details.html</p>
+  <h2>Record the event with the hold</h2>
+  <p>Inventory commits a reservation and an outbox entry in one transaction. A separate publisher sends the entry to the broker, so a broker outage need not roll back an already recorded hold.</p>
+  <details class="deep-dive">
+    <summary>Why can the same event still arrive twice?</summary>
+    <div class="deep-dive-content">
+      <p>The broker may accept an event just before the publisher loses its connection. Without an acknowledgement, the publisher cannot distinguish success from failure and sends it again.</p>
+      <p>The consumer records the event ID with its own state update and ignores a replay of that ID. This handles duplicate delivery; it does not guarantee that every consumer applies every event successfully.</p>
+    </div>
+  </details>
+</section>
+
+<section id="catalog-8-reservation-vocabulary"><p class="section-kicker">assets/components/glossary-data-dictionary.html</p>
+  <h2>Reservation vocabulary and stored data</h2>
+  <dl class="doc-facts">
+    <dt>Available stock</dt><dd>Units that can be promised now: on-hand units minus active holds and committed allocations.</dd>
+    <dt>Hold</dt><dd>A temporary claim on stock. In API names, a hold is called a reservation.</dd>
+    <dt>Allocation</dt><dd>A confirmed claim awaiting fulfillment; it no longer expires as a checkout hold.</dd>
+    <dt>Expiry</dt><dd>The instant after which an active hold cannot be confirmed, even if the cleanup worker has not run yet.</dd>
+  </dl>
+  <div class="doc-table-scroll" role="region" aria-label="Reservation data dictionary" tabindex="0">
+    <table class="doc-table">
+      <caption>Reservation record · owned by Inventory</caption>
+      <thead><tr><th scope="col">Field</th><th scope="col">Type / required</th><th scope="col">Meaning and constraints</th><th scope="col">Example</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>reservation_id</code></th><td>String / yes</td><td>Opaque immutable identifier; consumers must not parse its prefix.</td><td><code>rsv_1042</code></td></tr>
+        <tr><th scope="row"><code>sku</code></th><td>String / yes</td><td>Case-sensitive inventory item identifier.</td><td><code>SKU-42</code></td></tr>
+        <tr><th scope="row"><code>quantity</code></th><td>Integer / yes</td><td>Whole units, from 1 through 100; never a decimal weight.</td><td>2</td></tr>
+        <tr><th scope="row"><code>expires_at</code></th><td>RFC 3339 timestamp / yes</td><td>UTC creation time plus ten minutes. Retained for audit after confirmation.</td><td><code>2026-05-01T10:10:00Z</code></td></tr>
+        <tr><th scope="row"><code>state</code></th><td>Enum / yes</td><td>One of <code>active</code>, <code>confirmed</code>, <code>cancelled</code>, <code>expired</code>.</td><td><code>active</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="catalog-9-reservation-scope"><p class="section-kicker">assets/components/goals-scope-actors.html</p>
+  <h2>What stock reservation covers</h2>
+  <p>This example service holds stock while a customer completes checkout. A reservation is not a payment or a shipping instruction.</p>
+  <dl class="doc-facts">
+    <dt>Goal</dt><dd>Prevent two checkouts from claiming the same available unit.</dd>
+    <dt>Success signal</dt><dd>Concurrent requests never reduce available stock below zero; rejected requests identify the unavailable item.</dd>
+    <dt>In scope</dt><dd>Create a ten-minute hold, confirm it after payment authorization, and release it on cancellation or expiry.</dd>
+    <dt>Out of scope</dt><dd>Payment capture, warehouse picking, and replenishment forecasts.</dd>
+  </dl>
+  <h3>Actors and responsibility boundaries</h3>
+  <div class="doc-table-scroll" role="region" aria-label="Reservation actors" tabindex="0">
+    <table class="doc-table">
+      <caption>Who requests, decides, and observes</caption>
+      <thead><tr><th scope="col">Actor</th><th scope="col">Responsibility</th><th scope="col">Boundary</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Customer</th><td>Chooses quantity and completes checkout.</td><td>Cannot directly change stock balances.</td></tr>
+        <tr><th scope="row">Checkout service</th><td>Requests and confirms a hold using an authenticated service identity.</td><td>Does not calculate warehouse availability.</td></tr>
+        <tr><th scope="row">Inventory service</th><td>Atomically checks availability and owns reservation state.</td><td>Does not authorize payments.</td></tr>
+        <tr><th scope="row">Expiry worker</th><td>Releases active holds whose deadline has passed.</td><td>Must not release confirmed reservations.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="catalog-10-reservation-mapping"><p class="section-kicker">assets/components/mapping.html</p>
+  <h2>Map checkout input to an inventory reservation</h2>
+  <p>The adapter accepts a single basket line per request. It validates the line before calling Inventory; it does not silently round quantities or substitute another item.</p>
+  <div class="doc-table-scroll" role="region" aria-label="Checkout to inventory field mapping" tabindex="0">
+    <table class="doc-table">
+      <caption>Source → target transformations and failure behavior</caption>
+      <thead><tr><th scope="col">Checkout source</th><th scope="col">Inventory target</th><th scope="col">Transformation</th><th scope="col">Missing or invalid input</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>line.productCode</code></th><td><code>sku</code></td><td>Copy unchanged, including case.</td><td>Reject an empty value; never trim into a different SKU.</td></tr>
+        <tr><th scope="row"><code>line.units</code></th><td><code>quantity</code></td><td>Accept an integer from 1 through 100.</td><td>Reject strings, fractions, zero, and negative numbers.</td></tr>
+        <tr><th scope="row"><code>attempt.id</code></th><td><code>Idempotency-Key</code> header</td><td>Reuse the attempt ID for retries of this exact line and quantity.</td><td>Stop if absent. A changed basket starts a new attempt.</td></tr>
+        <tr><th scope="row">Service identity</th><td>Owning client</td><td>Inventory derives ownership from the access token.</td><td>Reject unauthenticated requests and any caller-supplied ownership field.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Worked example:</strong> <code>{"productCode":"SKU-42","units":2}</code> becomes <code>{"sku":"SKU-42","quantity":2}</code>. The attempt ID belongs in the header, not the JSON body.</p>
+</section>
+
+<section id="catalog-11-reservation-native-flow"><p class="section-kicker">assets/components/native-flow.html</p>
+  <h2>Trace the creation request across four boundaries</h2>
+  <figure class="diagram" aria-labelledby="catalog-11-reservation-native-caption">
+    <div class="flow">
+      <div class="node node--dark"><div class="node-meta"><span class="node-index">01</span><span class="node-role">Caller</span></div><h3>Checkout</h3><p>Requests two units with a retry key.</p></div>
+      <div class="connector"><span class="connector-label">create hold</span><span class="connector-arrow" aria-hidden="true"></span></div>
+      <div class="node"><div class="node-meta"><span class="node-index">02</span><span class="node-role">Owner</span></div><h3>Inventory</h3><p>Validates the request and controls the transaction.</p></div>
+      <div class="connector"><span class="connector-label">atomic commit</span><span class="connector-arrow" aria-hidden="true"></span></div>
+      <div class="node"><div class="node-meta"><span class="node-index">03</span><span class="node-role">Storage</span></div><h3>Database</h3><p>Stores the hold and its outbox entry together.</p></div>
+      <div class="connector"><span class="connector-label">pending entry</span><span class="connector-arrow" aria-hidden="true"></span></div>
+      <div class="node"><div class="node-meta"><span class="node-index">04</span><span class="node-role">Delivery</span></div><h3>Publisher</h3><p>Reads the outbox and sends the creation event to the broker.</p></div>
+    </div>
+    <figcaption id="catalog-11-reservation-native-caption">Read left to right: checkout requests a hold; Inventory commits it; a publisher later reads the recorded event. The API response returns after commit, without waiting for publication. This simplified flow omits rejection and retry branches.</figcaption>
+  </figure>
+</section>
+
+<section id="catalog-12-reservation-retry-note"><p class="section-kicker">assets/components/notes.html</p>
+  <h2>A timeout leaves the outcome unknown</h2>
+  <p>The database may commit a hold even if the response never reaches checkout. A network failure alone cannot tell the caller whether stock was reserved.</p>
+  <aside class="note-strip" aria-label="Retry caution">
+    <strong>Reuse the key.</strong>
+    <p>Retry the identical request with its original idempotency key. A new key asks for a new hold and can reserve the same basket twice.</p>
+  </aside>
+</section>
+
+<section id="catalog-13-reservation-requirements"><p class="section-kicker">assets/components/requirements-acceptance.html</p>
+  <h2>Observable reservation requirements</h2>
+  <p>These are example acceptance criteria, not evidence that an implementation has passed them.</p>
+  <h3>REQ-01 · Never over-allocate an item</h3>
+  <p>Creation must atomically check available stock and reserve the requested quantity.</p>
+  <ol class="doc-criteria">
+    <li><strong>AC-01 · Concurrent requests</strong><p><strong>Given</strong> one available unit and no active holds, <strong>when</strong> two distinct requests each reserve one unit concurrently, <strong>then</strong> exactly one succeeds, the other returns <code>409 insufficient_stock</code>, and available stock becomes zero.</p></li>
+    <li><strong>AC-02 · Rejected quantity</strong><p><strong>Given</strong> one available unit, <strong>when</strong> a request reserves two units, <strong>then</strong> no hold or creation event is recorded and available stock remains one.</p></li>
+  </ol>
+  <h3>REQ-02 · A retry must not create a second hold</h3>
+  <p>For 24 hours after the first completed request, an identical request from the same client with the same idempotency key returns its stored outcome.</p>
+  <ol class="doc-criteria" start="3">
+    <li><strong>AC-03 · Lost response</strong><p><strong>Given</strong> a committed hold whose response was lost, <strong>when</strong> checkout repeats the same request and key, <strong>then</strong> the response contains the same reservation ID and stock is not reduced again.</p></li>
+    <li><strong>AC-04 · Reused key, changed payload</strong><p><strong>Given</strong> a completed request, <strong>when</strong> its key is reused with a different quantity within 24 hours, <strong>then</strong> the service returns <code>409 idempotency_conflict</code> and leaves the original hold unchanged.</p></li>
+  </ol>
+</section>
+
+<section id="catalog-14-reservation-rules"><p class="section-kicker">assets/components/rules-decision-table.html</p>
+  <h2>When may a hold be confirmed?</h2>
+  <p>In this example, confirmation converts an active hold into a committed allocation. Inventory evaluates the rules in the listed order using its own clock and a locked reservation record.</p>
+  <div class="doc-table-scroll" role="region" aria-label="Confirmation decision rules" tabindex="0">
+    <table class="doc-table">
+      <caption>First matching row wins; a dash means the condition is irrelevant</caption>
+      <thead><tr><th scope="col">Rule</th><th scope="col">Caller owns hold?</th><th scope="col">State</th><th scope="col">Now before expiry?</th><th scope="col">Result</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">BR-01</th><td>No</td><td>Any</td><td>—</td><td>Reject without exposing the hold's state.</td></tr>
+        <tr><th scope="row">BR-02</th><td>Yes</td><td>Confirmed</td><td>—</td><td>Return the existing confirmation; no new allocation.</td></tr>
+        <tr><th scope="row">BR-03</th><td>Yes</td><td>Cancelled or expired</td><td>—</td><td>Reject; a new reservation is required.</td></tr>
+        <tr><th scope="row">BR-04</th><td>Yes</td><td>Active</td><td>No</td><td>Expire and release the hold; reject confirmation.</td></tr>
+        <tr><th scope="row">BR-05</th><td>Yes</td><td>Active</td><td>Yes</td><td>Confirm once and record the allocation.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Boundary:</strong> at exactly <code>expires_at</code>, an active hold is expired. An already confirmed hold remains confirmed after that timestamp. Authentication and malformed requests are handled before this table.</p>
+</section>
+
+<section id="catalog-15-reservation-scenario"><p class="section-kicker">assets/components/scenario.html</p>
+  <h2>Reserve two units during checkout</h2>
+  <dl class="doc-facts">
+    <dt>Trigger</dt><dd>The customer proceeds from basket to payment.</dd>
+    <dt>Preconditions</dt><dd>The checkout service is authenticated; item SKU-42 exists; the requested quantity is two.</dd>
+    <dt>Success outcome</dt><dd>One active hold owns two units until confirmation, cancellation, or its ten-minute deadline.</dd>
+    <dt>Failure outcome</dt><dd>No partial hold is created. The checkout keeps the basket and explains the rejection.</dd>
+  </dl>
+  <div class="doc-scenario">
+    <h3>Main scenario</h3>
+    <ol>
+      <li>Checkout submits SKU-42, quantity 2, and a new idempotency key.</li>
+      <li>Inventory validates the request and checks stock inside the same transaction that creates the hold.</li>
+      <li>Inventory commits the hold and an outbox record for its creation event.</li>
+      <li>Inventory returns the reservation ID and expiry time. Checkout shows the payment step.</li>
+    </ol>
+  </div>
+  <div class="doc-alternatives">
+    <h3>Alternative paths</h3>
+    <dl class="doc-facts">
+      <dt>A1 · Step 2: insufficient stock</dt><dd>Inventory returns <code>409 insufficient_stock</code> without creating a hold. Checkout asks the customer to reduce the quantity; the scenario ends.</dd>
+      <dt>A2 · Step 4: response lost</dt><dd>Checkout repeats the identical request with the same key. Inventory returns the original result, not a second hold; resume at step 4.</dd>
+      <dt>A3 · Before payment: hold expires</dt><dd>Checkout requests a new hold before proceeding. If stock is no longer available, follow A1; the expired hold cannot be confirmed.</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="catalog-16-reservation-steps"><p class="section-kicker">assets/components/steps.html</p>
+  <h2>Follow a hold through its lifetime</h2>
+  <ol class="steps">
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">01</span><span class="step-boundary">Checkout</span></div><h3>Request</h3><p>Send the item, quantity, and a stable key for retries.</p></li>
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">02</span><span class="step-boundary">Inventory</span></div><h3>Reserve</h3><p>Check stock and commit a hold in one transaction.</p></li>
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">03</span><span class="step-boundary">Checkout</span></div><h3>Confirm</h3><p>After payment authorization, confirm the still-active hold.</p></li>
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">04</span><span class="step-boundary">Inventory</span></div><h3>Release if unused</h3><p>Cancel or expire unconfirmed holds; confirmed allocations are not released by the expiry worker.</p></li>
+  </ol>
+</section>

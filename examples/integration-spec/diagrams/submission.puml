@@ -1,0 +1,20 @@
+@startuml
+participant Checkout
+participant Orders
+database Database
+participant Publisher
+queue Broker
+participant Fulfilment
+Checkout -> Orders: POST /v1/orders + key
+Orders -> Orders: Validate and authenticate
+Orders -> Database: Transaction: order + key + outbox
+Database --> Orders: Commit
+Orders --> Checkout: 201 accepted
+Publisher -> Database: Read pending outbox
+Publisher -> Broker: order.accepted.v1
+Broker --> Publisher: Acknowledge
+Publisher -> Database: Mark delivered
+Broker -> Fulfilment: Event (may be redelivered)
+Fulfilment -> Fulfilment: Commit duplicate marker + local work
+Fulfilment --> Broker: Acknowledge
+@enduml
