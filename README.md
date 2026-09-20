@@ -23,7 +23,21 @@ The skill does not require web research, a browser run, a framework, a build ste
 
 ## Included reference asset
 
-`assets/explanatory-page-template.html` is a complete, dependency-free sample page about the path of a web request. It demonstrates progressive disclosure, a definition panel, an HTML/CSS flow diagram, a numbered sequence, a responsive table, accessible focus states, reduced motion, and print rules. Copy the structure selectively and keep only the sections that teach the chosen concept.
+`assets/explanatory-page-template.html` is a complete, dependency-free sample page about the path of a web request. It demonstrates progressive disclosure, a definition panel, an HTML/CSS flow diagram, a numbered sequence, a responsive table, accessible focus states, reduced motion, and print rules. It also includes a reusable topic-navigation shell: an expanded, collapsible left panel from `80rem` up, and a sticky burger disclosure on smaller screens. The current section is highlighted as you scroll. Native links and disclosure remain usable without JavaScript.
+
+### Reuse the layout
+
+1. Copy `assets/explanatory-page-template.html` to your new page.
+2. Keep the navigation shell, inline CSS, and bottom script. Replace the header, main sections, and footer inside `.reading-pane`, between the `PAGE CONTENT` comments.
+3. Give each topic a unique section `id` and update the links in `#topic-links` to match. Keep `#main-content` for the skip link.
+4. Update `<html lang>`, title, description, and navigation labels for your audience. Keep only the teaching sections you need; the layout does not prescribe the explanation.
+
+The script handles responsive defaults, Escape, mobile focus transfer, and current-section indication. There are no dependencies or build steps. Open the HTML file directly, or preview locally:
+
+```sh
+python3 -m http.server 8765 --bind 127.0.0.1
+# http://localhost:8765/assets/explanatory-page-template.html
+```
 
 ## Validate locally
 

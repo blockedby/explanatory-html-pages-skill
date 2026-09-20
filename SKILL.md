@@ -51,7 +51,17 @@ Use progressive disclosure by default: orient the reader first, define the core 
 - Respect supplied visual constraints. When none exist, avoid turning the explanation into a decorative landing page. Use motion only when it explains a state or relationship, and honor `prefers-reduced-motion`.
 - Remove unused sections and any unresolved sample markers before handoff. A finished page must stand on its own.
 
-The included `assets/explanatory-page-template.html` is a complete, dependency-free reference for this structure. Copy its patterns selectively; it is not a required schema.
+The included `assets/explanatory-page-template.html` is a complete, dependency-free reference and reusable layout shell. Copy the file, keep its navigation CSS/markup and inline script, and replace the content inside `.reading-pane` (marked `PAGE CONTENT`). Update the title, metadata, language, and navigation links to match the new content. Its teaching sections are examples, not a required schema.
+
+For pages with multiple topics, use this navigation by default:
+
+- On wide screens (the template uses `80rem`), show an expanded left panel with a visible collapse control; keep a reopen control available when collapsed. Reserve layout space rather than covering the text.
+- On smaller screens, put the same topic links in a sticky burger disclosure, closed initially. Close it after choosing a topic or pressing Escape. Keep keyboard focus useful: move it to the destination after navigation and return it to the toggle after Escape.
+- Use ordinary anchor links to unique section IDs, preserve deep links, and indicate the current section with `aria-current` plus a non-color cue. Allow long labels to wrap and long topic lists to scroll.
+- Keep navigation visually quieter than the explanation: compact readable labels, muted numbering, gentle hover feedback, and a subtle active row with a non-color marker. Prefer an unobtrusive, named icon control over a large collapse label. Use short, interruptible transitions for panel resizing and respect reduced motion.
+- Keep native keyboard behavior, visible focus, comfortable touch targets, anchor offsets, reduced-motion support, and a print layout without the panel. Without JavaScript, the native disclosure and links must still work.
+
+Reuse the shell without rewriting the explanation or changing its language, audience, teaching structure, or handoff format. When adding navigation to an existing page, preserve its palette, typography, spacing, and content styling; adapt the navigation to that page instead of applying the reference theme. For a new page without visual constraints, the reference uses a restrained black-and-white palette. The small inline script is for navigation only; no framework or network dependency is needed.
 
 ### 4. Parse before handoff
 

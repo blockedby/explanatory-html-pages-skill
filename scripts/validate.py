@@ -199,6 +199,18 @@ def check_template(errors: list[str]) -> None:
         if attrs.get("href"):
             errors.append("assets/explanatory-page-template.html: external or local <link> breaks self-containment")
 
+    ids = [attrs["id"] for _, attrs in parser.elements if attrs.get("id")]
+    if len(ids) != len(set(ids)):
+        errors.append("assets/explanatory-page-template.html: IDs must be unique")
+    for tag, attrs in parser.elements:
+        href = attrs.get("href") or ""
+        if tag == "a" and href.startswith("#") and href[1:] not in ids:
+            errors.append(f"assets/explanatory-page-template.html: missing anchor target {href}")
+        for attribute in ("aria-controls", "aria-labelledby"):
+            for target in (attrs.get(attribute) or "").split():
+                if target not in ids:
+                    errors.append(f"assets/explanatory-page-template.html: missing {attribute} target {target}")
+
     for attrs in elements(parser, "img"):
         if "alt" not in attrs:
             errors.append("assets/explanatory-page-template.html: every image needs an alt attribute")

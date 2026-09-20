@@ -8,16 +8,16 @@
   <style>
     :root {
       color-scheme: light;
-      --ink: #1d2420;
-      --paper: #f4f1e9;
-      --surface: #fffdf8;
-      --wash: #e7e3d9;
-      --muted: #626861;
-      --line: #1d2420;
-      --rule: #c9c5ba;
-      --accent: #d4543b;
-      --accent-soft: #f1d2c9;
-      --teal: #17666a;
+      --ink: #191919;
+      --paper: #faf9f6;
+      --surface: #ffffff;
+      --wash: #eeeeee;
+      --muted: #626262;
+      --line: #191919;
+      --rule: #cccccc;
+      --accent: #191919;
+      --accent-soft: #e8e8e8;
+      --teal: #444444;
       --measure: 76rem;
       --shadow: 0.55rem 0.55rem 0 var(--ink);
     }
@@ -52,7 +52,8 @@
     a:hover { text-decoration-style: double; }
 
     a:focus-visible,
-    summary:focus-visible {
+    summary:focus-visible,
+    button:focus-visible {
       outline: 3px solid var(--accent);
       outline-offset: 4px;
     }
@@ -101,7 +102,7 @@
       position: absolute;
       top: 0.75rem;
       left: 0.75rem;
-      z-index: 2;
+      z-index: 20;
       padding: 0.7rem 1rem;
       color: var(--paper);
       background: var(--ink);
@@ -220,37 +221,156 @@
       font-size: 0.9rem;
     }
 
-    .toc {
-      border-top: 1px solid var(--rule);
+    /* Reusable navigation shell: keep with the details element and script. */
+    .reading-pane { container-type: inline-size; }
+    .topic-panel {
+      --nav-line: color-mix(in srgb, var(--ink) 10%, transparent);
+      --nav-hover: color-mix(in srgb, var(--ink) 5%, transparent);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--nav-line);
+      background: var(--paper);
     }
-
-    .toc ul {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .toc li { flex: 1 1 10rem; }
-
-    .toc a {
+    .topic-toggle {
       display: flex;
       align-items: center;
       gap: 0.7rem;
-      min-height: 3.5rem;
-      padding: 0.8rem 0.8rem 0.8rem 0;
-      font-weight: 700;
-      text-decoration: none;
+      min-height: 2.75rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 0.65rem;
+      cursor: pointer;
+      font-size: 0.92rem;
+      font-weight: 600;
+      list-style: none;
+      transition: background-color 160ms ease;
     }
-
-    .toc a:hover { color: var(--accent); }
-
+    .topic-toggle::-webkit-details-marker { display: none; }
+    .topic-toggle:hover { background: var(--nav-hover); }
+    .topic-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+    .topic-icon, .topic-close {
+      display: grid;
+      flex: 0 0 auto;
+      place-items: center;
+      color: var(--muted);
+    }
+    .topic-icon svg, .topic-close svg { width: 1.15rem; height: 1.15rem; }
+    .topic-icon .panel-symbol { display: none; }
+    .topic-label { min-width: 0; overflow-wrap: anywhere; }
+    .topic-close {
+      width: 1.65rem;
+      height: 1.65rem;
+      margin-left: auto;
+      border: 1px solid var(--nav-line);
+      border-radius: 0.4rem;
+      background: var(--surface);
+      transition: transform 200ms ease;
+    }
+    .topic-panel[open] .topic-close { transform: rotate(180deg); }
+    .topic-panel .toc {
+      padding: 1.2rem 0.25rem 0.75rem;
+      max-height: calc(100dvh - 5rem);
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+    .topic-caption {
+      margin: 0 0.7rem 0.65rem;
+      color: var(--muted);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .toc ul { display: grid; gap: 0.3rem; margin: 0; padding: 0; list-style: none; }
+    .toc li { min-width: 0; }
+    .toc a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-height: 2.875rem;
+      padding: 0.65rem 0.7rem;
+      border: 1px solid transparent;
+      border-radius: 0.6rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      text-decoration: none;
+      transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+    }
+    .toc a > span:last-child { min-width: 0; }
+    .toc a::after {
+      content: "";
+      flex: 0 0 0.3rem;
+      height: 0.3rem;
+      margin-left: auto;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+    .toc a:hover { color: var(--ink); background: var(--nav-hover); }
+    .toc a:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+    .toc a[aria-current="location"] {
+      color: var(--ink);
+      background: var(--surface);
+      border-color: var(--nav-line);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
+    }
+    .toc a[aria-current="location"]::after { opacity: 1; }
     .toc-number {
-      color: var(--accent);
+      flex: 0 0 auto;
+      color: var(--muted);
       font-family: "Courier New", Courier, monospace;
-      font-size: 0.76rem;
+      font-size: 0.7rem;
+      font-weight: 400;
+    }
+    main section { scroll-margin-top: 5rem; }
+    @media (min-width: 80rem) {
+      body { padding-left: 4.25rem; transition: padding-left 240ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+      body:has(.topic-panel[open]) { padding-left: 17rem; }
+      .topic-panel {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 4.25rem;
+        padding: 1rem 0.5rem;
+        border-right: 1px solid var(--nav-line);
+        border-bottom: 0;
+        transition: width 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+      }
+      .topic-panel[open] { width: 17rem; }
+      .topic-panel .toc { max-height: calc(100dvh - 6rem); }
+      .topic-icon .menu-symbol { display: none; }
+      .topic-icon .panel-symbol { display: block; }
+      .topic-close { transform: rotate(-90deg); }
+      .topic-panel[open] .topic-close { transform: rotate(90deg); }
+      .topic-panel:not([open]) .topic-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+      .topic-panel:not([open]) .topic-close { display: none; }
+      .topic-panel:not([open]) .topic-toggle { justify-content: center; }
+      main section { scroll-margin-top: 1.5rem; }
+    }
+    @media (width < 80rem) {
+      .topic-panel .toc {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        padding: 1rem 0.75rem;
+        border-bottom: 1px solid var(--nav-line);
+        background: var(--paper);
+        box-shadow: 0 10px 18px rgb(0 0 0 / 5%);
+      }
+      .topic-panel[open] .toc { animation: topic-reveal 180ms ease-out; }
+    }
+    @keyframes topic-reveal {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body, .topic-panel, .topic-toggle, .topic-close, .toc a, .toc a::after { transition: none; }
+      .topic-panel[open] .toc { animation: none; }
     }
 
     main section {
@@ -342,25 +462,25 @@
 
     .definition-detail {
       margin-bottom: 2rem;
-      color: #d8ddd7;
+      color: #dadada;
     }
 
     .signal-list {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       margin: 0;
-      border-top: 1px solid #68716a;
+      border-top: 1px solid #6c6c6c;
     }
 
     .signal-list > div {
       padding: 1rem 0.85rem 0 0;
     }
 
-    .signal-list > div + div { border-left: 1px solid #68716a; padding-left: 0.85rem; }
+    .signal-list > div + div { border-left: 1px solid #6c6c6c; padding-left: 0.85rem; }
 
     .signal-list dt {
       margin-bottom: 0.3rem;
-      color: #aab4ab;
+      color: #b0b0b0;
       font-family: "Courier New", Courier, monospace;
       font-size: 0.7rem;
       font-weight: 700;
@@ -466,7 +586,8 @@
     }
 
     .node-index { color: var(--accent); }
-    .node--dark .node-role { color: #b9c3b9; }
+    .node--dark .node-role { color: #bfbfbf; }
+    .node--dark .node-index { color: #ffffff; }
     .node:not(.node--dark) .node-role { color: var(--muted); }
 
     .node h3 {
@@ -481,7 +602,7 @@
       line-height: 1.4;
     }
 
-    .node--dark p { color: #d8ddd7; }
+    .node--dark p { color: #dadada; }
 
     .connector {
       display: grid;
@@ -737,7 +858,7 @@
 
     .footer-grid p:last-child { margin: 0; }
 
-    @media (max-width: 900px) {
+    @container (max-width: 900px) {
       .flow {
         grid-template-columns: minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr);
         gap: 0.45rem;
@@ -749,7 +870,7 @@
       .node-role { font-size: 0.6rem; }
     }
 
-    @media (max-width: 720px) {
+    @container (max-width: 720px) {
       .page { width: min(calc(100% - 1.5rem), var(--measure)); }
 
       .utility-row,
@@ -765,7 +886,7 @@
       .orientation { padding-left: 1rem; }
       .display-word { font-size: clamp(3.7rem, 20vw, 6.5rem); }
       .signal-list { grid-template-columns: 1fr; }
-      .signal-list > div + div { padding-left: 0; border-top: 1px solid #68716a; border-left: 0; }
+      .signal-list > div + div { padding-left: 0; border-top: 1px solid #6c6c6c; border-left: 0; }
 
       .flow { grid-template-columns: 1fr; gap: 0.5rem; padding: 1.5rem 0; }
 
@@ -851,7 +972,9 @@
 
     @media print {
       :root { --paper: #fff; --surface: #fff; --wash: #f2f2f2; }
-      body { font-size: 10pt; }
+      body, body:has(.topic-panel[open]) { font-size: 10pt; padding-left: 0; }
+      .reading-pane { container-type: normal; }
+      .topic-panel { display: none; }
       .skip-link,
       .toc { display: none; }
       .site-header { padding-top: 0; }
@@ -868,6 +991,31 @@
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
 
+  <!-- REUSABLE SHELL: edit these links to match your section IDs. -->
+  <details class="topic-panel" id="topic-panel" open>
+    <summary class="topic-toggle" aria-controls="topic-links" title="Toggle topics">
+      <span class="topic-icon" aria-hidden="true">
+        <svg class="menu-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <svg class="panel-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+      </span>
+      <span class="topic-label">Topics</span>
+      <span class="topic-close" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m8 10 4 4 4-4"/></svg>
+      </span>
+    </summary>
+    <nav class="toc" id="topic-links" aria-label="Guide sections">
+      <p class="topic-caption">On this page</p>
+      <ul>
+        <li><a href="#meaning"><span class="toc-number" aria-hidden="true">01</span><span>Meaning</span></a></li>
+        <li><a href="#map"><span class="toc-number" aria-hidden="true">02</span><span>Path</span></a></li>
+        <li><a href="#sequence"><span class="toc-number" aria-hidden="true">03</span><span>Sequence</span></a></li>
+        <li><a href="#boundaries"><span class="toc-number" aria-hidden="true">04</span><span>Boundaries</span></a></li>
+        <li><a href="#mental-model"><span class="toc-number" aria-hidden="true">05</span><span>Keep the model</span></a></li>
+      </ul>
+    </nav>
+  </details>
+  <div class="reading-pane">
+  <!-- PAGE CONTENT: replace header, main sections, and footer; retain the shell. -->
   <header class="site-header">
     <div class="page">
       <div class="utility-row">
@@ -892,15 +1040,7 @@
         </aside>
       </div>
 
-      <nav class="toc" aria-label="Guide sections">
-        <ul>
-          <li><a href="#meaning"><span class="toc-number" aria-hidden="true">01</span><span>Meaning</span></a></li>
-          <li><a href="#map"><span class="toc-number" aria-hidden="true">02</span><span>Path</span></a></li>
-          <li><a href="#sequence"><span class="toc-number" aria-hidden="true">03</span><span>Sequence</span></a></li>
-          <li><a href="#boundaries"><span class="toc-number" aria-hidden="true">04</span><span>Boundaries</span></a></li>
-          <li><a href="#mental-model"><span class="toc-number" aria-hidden="true">05</span><span>Keep the model</span></a></li>
-        </ul>
-      </nav>
+
     </div>
   </header>
 
@@ -1104,8 +1244,73 @@
   <footer class="site-footer">
     <div class="page footer-grid">
       <p class="footer-mark">Explanatory HTML / Reference</p>
-      <p>This complete sample uses only semantic HTML and inline CSS. Copy its structural patterns, then keep only the sections that help a specific reader understand a specific concept.</p>
+      <p>This complete sample uses semantic HTML, inline CSS, and a small inline navigation script. Copy its structural patterns, then keep only the sections that help a specific reader understand a specific concept.</p>
     </div>
   </footer>
+  <!-- END PAGE CONTENT -->
+  </div>
+  <script>
+    // Native details keeps navigation usable without JavaScript.
+    (() => {
+      const panel = document.getElementById('topic-panel');
+      const toggle = panel.querySelector('summary');
+      const wide = matchMedia('(min-width: 80rem)');
+      let desktopOpen = true;
+      const syncLayout = () => {
+        const hadFocus = panel.contains(document.activeElement);
+        panel.open = wide.matches && desktopOpen;
+        if (!panel.open && hadFocus) toggle.focus();
+      };
+      const syncToggleLabel = () => {
+        const label = panel.open ? 'Collapse topics' : 'Open topics';
+        toggle.setAttribute('aria-label', label);
+        toggle.title = label;
+      };
+      syncLayout();
+      syncToggleLabel();
+      panel.addEventListener('toggle', syncToggleLabel);
+      wide.addEventListener('change', syncLayout);
+      toggle.addEventListener('click', () => {
+        if (wide.matches) desktopOpen = !panel.open;
+      });
+      panel.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && panel.open) {
+          panel.open = false;
+          if (wide.matches) desktopOpen = false;
+          toggle.focus();
+        }
+      });
+      const links = [...panel.querySelectorAll('a[href^="#"]')];
+      const targets = links.map(link => document.getElementById(link.hash.slice(1)));
+      links.forEach((link, index) => {
+        link.addEventListener('click', event => {
+          if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+          if (!wide.matches && targets[index]) {
+            panel.open = false;
+            targets[index].setAttribute('tabindex', '-1');
+            targets[index].focus({ preventScroll: true });
+          }
+        });
+      });
+      let scheduled = false;
+      const updateCurrent = () => {
+        scheduled = false;
+        let current = -1;
+        targets.forEach((target, index) => {
+          if (target && target.getBoundingClientRect().top <= 120) current = index;
+        });
+        links.forEach((link, index) => {
+          if (index === current) link.setAttribute('aria-current', 'location');
+          else link.removeAttribute('aria-current');
+        });
+      };
+      const schedule = () => {
+        if (!scheduled) { scheduled = true; requestAnimationFrame(updateCurrent); }
+      };
+      addEventListener('scroll', schedule, { passive: true });
+      addEventListener('resize', schedule);
+      updateCurrent();
+    })();
+  </script>
 </body>
 </html>
