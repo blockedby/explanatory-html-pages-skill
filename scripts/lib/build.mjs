@@ -21,6 +21,12 @@ export async function buildDocument(directory, { out } = {}) {
   const contentPath = await sourceFile(root, 'content.html');
   const metadata = readMetadata(await readFile(metadataPath, 'utf8'));
   const { document, topics } = parseContent(await readFile(contentPath, 'utf8'));
+  const element = (tag, attributes = {}, ...children) => {
+    const node = document.createElement(tag);
+    for (const [name, value] of Object.entries(attributes)) node.setAttribute(name, value);
+    node.append(...children);
+    return node;
+  };
   const text = messages[metadata.lang];
   const protectedPaths = [metadataPath, contentPath];
   const warnings = [];
@@ -52,24 +58,21 @@ export async function buildDocument(directory, { out } = {}) {
     const isBpmn = kind === 'bpmn';
     hasBpmn ||= isBpmn;
     warnings.push(...(rendered.warnings || []).map(warning => `${figure.dataset.source}: ${warning}`));
-    const viewport = document.createElement('div');
-    viewport.className = 'diagram-viewport';
-    viewport.setAttribute('tabindex', '0');
-    viewport.setAttribute('role', 'region');
-    viewport.setAttribute('aria-label', `${text.scroll}: ${caption.textContent.trim()}`);
+    const viewport = element('div', {
+      class: 'diagram-viewport', tabindex: '0', role: 'region',
+      'aria-label': `${text.scroll}: ${caption.textContent.trim()}`
+    });
     if (isBpmn) {
       viewport.dataset.bpmnRuntime = '';
       viewport.dataset.bpmnSourceId = `${prefix}-source`;
       viewport.dataset.bpmnTitle = caption.textContent.trim();
       viewport.dataset.bpmnState = 'pending';
-      const status = document.createElement('p');
-      status.className = 'diagram-status';
-      status.setAttribute('role', 'status');
-      status.textContent = metadata.lang === 'ru' ? 'Диаграмма BPMN появится при открытии HTML с включённым JavaScript. Перед печатью дождитесь её загрузки.' : 'The BPMN diagram renders when this HTML is opened with JavaScript enabled. Wait for it before printing.';
-      viewport.append(status);
-      const fallback = document.createElement('noscript');
-      fallback.textContent = metadata.lang === 'ru' ? 'Для отображения BPMN включите JavaScript. Исходник доступен ниже.' : 'Enable JavaScript to display BPMN. The diagram source is available below.';
-      viewport.append(fallback);
+      viewport.append(
+        element('p', { class: 'diagram-status', role: 'status' },
+          metadata.lang === 'ru' ? 'Диаграмма BPMN появится при открытии HTML с включённым JavaScript. Перед печатью дождитесь её загрузки.' : 'The BPMN diagram renders when this HTML is opened with JavaScript enabled. Wait for it before printing.'),
+        element('noscript', {},
+          metadata.lang === 'ru' ? 'Для отображения BPMN включите JavaScript. Исходник доступен ниже.' : 'Enable JavaScript to display BPMN. The diagram source is available below.')
+      );
     } else {
       viewport.innerHTML = prepareSvg(rendered.svg, { prefix, title: caption.textContent.trim() });
     }
@@ -77,21 +80,14 @@ export async function buildDocument(directory, { out } = {}) {
     figure.classList.add('diagram-rendered');
     figure.removeAttribute('data-diagram');
     figure.removeAttribute('data-source');
-    const details = document.createElement('details');
-    details.className = 'diagram-source deep-dive';
-    const summary = document.createElement('summary');
-    summary.textContent = text.source;
-    const pre = document.createElement('pre');
-    const code = document.createElement('code');
-    code.textContent = rendered.source;
-    if (isBpmn) code.id = `${prefix}-source`;
-    pre.append(code);
-    details.append(summary, pre);
-    const download = document.createElement('a');
-    download.textContent = text.download;
-    download.download = `diagram-${count}.${rendered.extension}`;
-    download.href = `data:text/plain;charset=utf-8,${encodeURIComponent(rendered.source)}`;
-    details.append(download);
+    const details = element('details', { class: 'diagram-source deep-dive' },
+      element('summary', {}, text.source),
+      element('pre', {}, element('code', isBpmn ? { id: `${prefix}-source` } : {}, rendered.source)),
+      element('a', {
+        download: `diagram-${count}.${rendered.extension}`,
+        href: `data:text/plain;charset=utf-8,${encodeURIComponent(rendered.source)}`
+      }, text.download)
+    );
     // figcaption must remain the figure's first or last child.
     figure.insertBefore(details, caption);
   }

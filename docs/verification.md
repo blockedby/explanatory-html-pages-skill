@@ -4,7 +4,13 @@ Tracking: https://github.com/blockedby/explanatory-html-pages-skill/issues/1
 
 Verified on Linux x64 with Node 24.21.0. Builds use npm dependencies only: PlantUML TeaVM/Viz.js in Node, BPMN XML/DI preparation in Node, and embedded bpmn-js/DOMPurify in the reader. Neither Java nor Chromium is a build requirement. Chromium was used only as an optional development tool to test the ordinary reader-browser path. This is implementation acceptance, not proof of business correctness.
 
-## Fresh verification
+## DOM helper follow-up verification
+
+The private figure-construction helper preserves text-safe DOM insertion and the existing sanitized PlantUML SVG path. Fresh `npm test` passed **45 tests** and `npm run test:browser` passed **10 scenarios**, with zero failures or skips. The new EN/RU regression covers escaping, retained/downloaded source equality, serialization, IDs, accessibility, no-JS markup and caption position.
+
+After `npm run build:examples`, SHA-256 checks against the pre-refactor baseline matched all four example HTML files and the standalone template byte-for-byte. `npm run validate` and `git diff --check` passed. The builder shrank from 132 to 128 lines; tests add coverage, so this is a local readability improvement, not a net repository-size reduction or a measured model-speed improvement. Incremental source editing is documented in `references/authoring.md`.
+
+## Browser-free migration verification
 
 ```sh
 npm test

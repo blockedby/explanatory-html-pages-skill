@@ -9,6 +9,7 @@ import { JSDOM } from 'jsdom';
 import { createDocument } from '../scripts/lib/create.mjs';
 import { buildDocument } from '../scripts/lib/build.mjs';
 import { toolkitRoot } from '../scripts/lib/paths.mjs';
+import { prepareBpmn } from '../scripts/renderers/bpmn.mjs';
 const execute = promisify(execFile);
 async function workspace(t) { const root = await mkdtemp(path.join(os.tmpdir(), 'document-build-')); t.after(() => rm(root, { recursive: true, force: true })); return root; }
 
@@ -67,6 +68,64 @@ test('every localized preset builds with retained sources and BPMN reader assets
       }
       assert.equal(document.querySelector('figure.diagram-rendered').lastElementChild.localName, 'figcaption');
     }
+  }
+});
+test('localized figure assembly preserves text, serialization, IDs and accessible fallbacks', async t => {
+  const root = await workspace(t);
+  const caption = `Quotes "double" 'single' & </figcaption><script>window.INJECTED=1</script>`;
+  const payload = `"quoted" & </code></pre><script>window.INJECTED=1</script>`;
+  const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  const attribute = value => escape(value).replaceAll('"', '&quot;');
+  for (const lang of ['en', 'ru']) {
+    const source = path.join(root, lang);
+    await createDocument(source, { title: 'Figure regression', lang, preset: 'process' });
+    const bpmnFile = path.join(source, 'diagrams/process.bpmn');
+    // Pre-existing DI keeps authored XML byte-for-byte rather than generating layout.
+    const prepared = await prepareBpmn(await readFile(bpmnFile, 'utf8'));
+    const bpmn = prepared.source.replace('</bpmn:definitions>', `<!-- ${payload} -->\n</bpmn:definitions>`);
+    assert.ok(bpmn.includes(payload));
+    const puml = `@startuml\n' ${payload}\nAlice -> Bob: Hello\n@enduml\n`;
+    await writeFile(bpmnFile, bpmn);
+    await writeFile(path.join(source, 'diagrams/message.puml'), puml);
+    await writeFile(path.join(source, 'content.html'), `<section id="figures"><h2>Figures</h2><figure id="uml" data-diagram="plantuml" data-source="diagrams/message.puml"><figcaption>${escape(caption)}</figcaption></figure><figure id="bpmn" data-diagram="bpmn" data-source="diagrams/process.bpmn"><figcaption>${escape(caption)}</figcaption></figure></section>`);
+    const out = path.join(root, `${lang}.html`);
+    await buildDocument(source, { out });
+    const document = new JSDOM(await readFile(out, 'utf8')).window.document;
+    const labels = lang === 'ru'
+      ? ['Исходник диаграммы', 'Скачать исходник', 'Диаграмма; прокручивайте по горизонтали для просмотра', 'Для отображения BPMN включите JavaScript. Исходник доступен ниже.', 'Диаграмма BPMN появится при открытии HTML с включённым JavaScript. Перед печатью дождитесь её загрузки.']
+      : ['Diagram source', 'Download source', 'Diagram; scroll horizontally to inspect', 'Enable JavaScript to display BPMN. The diagram source is available below.', 'The BPMN diagram renders when this HTML is opened with JavaScript enabled. Wait for it before printing.'];
+    for (const [index, raw] of [puml, bpmn].entries()) {
+      const isBpmn = index === 1;
+      const prefix = `rendered-diagram-${index + 1}`;
+      const figure = document.getElementById(isBpmn ? 'bpmn' : 'uml');
+      const viewport = figure.firstElementChild;
+      assert.deepEqual([...figure.children].map(node => node.localName), ['div', 'details', 'figcaption']);
+      assert.equal(figure.lastElementChild.textContent, caption);
+      assert.equal(figure.className, 'diagram-rendered');
+      assert.equal(figure.hasAttribute('data-diagram') || figure.hasAttribute('data-source'), false);
+      const attributes = [['class', 'diagram-viewport'], ['tabindex', '0'], ['role', 'region'], ['aria-label', `${labels[2]}: ${caption}`]];
+      if (isBpmn) attributes.push(['data-bpmn-runtime', ''], ['data-bpmn-source-id', `${prefix}-source`], ['data-bpmn-title', caption], ['data-bpmn-state', 'pending']);
+      assert.deepEqual([...viewport.attributes].map(({ name, value }) => [name, value]), attributes);
+      const details = figure.querySelector('details');
+      const href = `data:text/plain;charset=utf-8,${encodeURIComponent(raw)}`;
+      assert.equal(details.outerHTML, `<details class="diagram-source deep-dive"><summary>${labels[0]}</summary><pre><code${isBpmn ? ` id="${prefix}-source"` : ''}>${escape(raw)}</code></pre><a download="diagram-${index + 1}.${isBpmn ? 'bpmn' : 'puml'}" href="${attribute(href)}">${labels[1]}</a></details>`);
+      assert.equal(details.querySelector('code').textContent, raw);
+      assert.equal(decodeURIComponent(details.querySelector('a').getAttribute('href').split(',')[1]), raw);
+      if (isBpmn) {
+        assert.equal(viewport.innerHTML, `<p class="diagram-status" role="status">${labels[4]}</p><noscript>${labels[3]}</noscript>`);
+        assert.equal(document.getElementById(`${prefix}-source`), details.querySelector('code'));
+      } else {
+        const svg = viewport.querySelector('svg');
+        assert.equal(svg.getAttribute('role'), 'img');
+        assert.equal(document.getElementById(svg.getAttribute('aria-labelledby')).textContent, caption);
+        for (const node of svg.querySelectorAll('[id]')) assert.ok(node.id.startsWith(`${prefix}-`));
+      }
+    }
+    const ids = [...document.querySelectorAll('[id]')].map(node => node.id);
+    assert.equal(new Set(ids).size, ids.length);
+    assert.equal(document.querySelectorAll('script').length, 4);
+    assert.equal(document.querySelectorAll('script[data-bpmn-library]').length, 3);
+    assert.equal(document.querySelectorAll('figure script, figure img').length, 0);
   }
 });
 test('BPMN builds without an installed browser and embeds XML only as inert escaped text', async t => {

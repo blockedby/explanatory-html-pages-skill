@@ -40,6 +40,27 @@ Navigation is generated from top-level sections. Stable author-supplied IDs surv
 
 No `html`, `head`, `body`, `h1`, page navigation, CSS, scripts, images or remote resources belong in source content. The supported semantic vocabulary includes paragraphs, sections/articles/asides, headings h2–h6, lists, definition lists, tables, code/pre, links, figures and native details/summary. Components use these same elements. Use `.puml` and `.bpmn` sources for rendered diagrams, not opaque image exports.
 
+## Revising an existing document
+
+Keep the editable source directory alongside the delivered HTML. A follow-up such as “add a warning after this table”, “replace this block” or “remove this section” is a source edit followed by the same build command—not a new scaffold or a rewrite of the finished HTML.
+
+| Requested change | Edit |
+| --- | --- |
+| Add, replace, remove or reorder a content block | The relevant part of `content.html` |
+| Change a diagram | Its referenced file in `diagrams/`; update the caption if needed |
+| Change document title, description or language | `document.json` (translate authored content separately) |
+| Change appearance | Prefer existing component classes; change canonical assets only for an intentional shared design-system change |
+
+Use the agent's normal search/read/edit tools: locate the section by heading or stable ID, read that section and necessary surrounding context, make a targeted replacement, and rebuild. Read only the relevant component snippet when adding a component. Routine content edits do not require reading the builder, theme, or generated HTML's embedded libraries into model context. The builder's private DOM helper is an implementation detail, not an authoring API or a new document language.
+
+Preserve explicit section IDs when changing wording so existing links still work. When deleting a section, also update references to it and any explanation that depends on it. Navigation is regenerated automatically. Do not automatically delete a diagram source just because one figure was removed; another figure may use it.
+
+```sh
+node /path/to/skill/scripts/document.mjs build ./order-guide --out ./order-guide/report.html
+```
+
+Inspect the changed region in the resulting page; also check affected anchors, narrow layout and printing when relevant. BPMN must finish reader-side rendering before print verification. Do not patch `report.html` or an in-browser DOM as the source of truth: those changes disappear on the next build. A standalone HTML remains readable without its source directory, but keep the directory for this editable workflow.
+
 ## Components
 
 Copy a relevant `assets/components/*.html` snippet into `content.html`, then adapt the content and IDs. The snippet is plain HTML, not a custom document language. Read [components.md](components.md) for coverage and markup guidance. Existing headings, table captions, headers and figure captions should remain meaningful after adaptation.
