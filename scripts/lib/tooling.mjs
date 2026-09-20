@@ -1,4 +1,4 @@
-import { access, readdir } from 'node:fs/promises';
+import { access, readdir, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { createRequire } from 'node:module';
 import { execFile } from 'node:child_process';
@@ -16,7 +16,11 @@ export async function doctor() {
   const [major, minor] = process.versions.node.split('.').map(Number);
   checks.push({ tool: 'Node', ok: major > 22 || (major === 22 && minor >= 12), version: process.versions.node });
   for (const name of ['parse5', 'jsdom', 'dompurify', 'bpmn-js', 'bpmn-moddle', 'bpmn-auto-layout', 'playwright']) {
-    try { require.resolve(name); checks.push({ tool: name, ok: true }); }
+    try {
+      require.resolve(name);
+      const metadata = JSON.parse(await readFile(path.join(toolkitRoot, 'node_modules', name, 'package.json'), 'utf8'));
+      checks.push({ tool: name, ok: true, version: metadata.version });
+    }
     catch { checks.push({ tool: name, ok: false, fix: 'Run node scripts/setup.mjs --npm' }); }
   }
   const java = process.env.JAVA_BIN || path.join(toolkitRoot, '.tools/jre/bin/java');
@@ -25,7 +29,18 @@ export async function doctor() {
     checks.push({ tool: 'Java', ok: true, path: java, version: (stderr || stdout).split('\n')[0] });
   } catch { checks.push({ tool: 'Java', ok: false, fix: 'Set JAVA_BIN or run node scripts/setup.mjs --plantuml (Linux x64).' }); }
   const jar = process.env.PLANTUML_JAR || path.join(toolkitRoot, '.tools/plantuml.jar');
-  try { await access(jar, constants.R_OK); checks.push({ tool: 'PlantUML jar', ok: true, path: jar }); }
+  try {
+    await access(jar, constants.R_OK);
+    // PlantUML's version command exits 16 when optional Graphviz is absent.
+    // Our renderer uses Smetana, so a reported version still proves jar startup.
+    const { stdout } = await execute(java, ['-Djava.awt.headless=true', '-jar', jar, '--version'], { timeout: 10000, maxBuffer: 65536 }).catch(error => {
+      if (error.code === 16 && error.stdout?.includes('PlantUML version')) return error;
+      throw error;
+    });
+    const version = stdout.split('\n').find(line => line.startsWith('PlantUML version'));
+    if (!version) throw new Error('Cannot identify PlantUML version');
+    checks.push({ tool: 'PlantUML jar', ok: true, path: jar, version });
+  }
   catch { checks.push({ tool: 'PlantUML jar', ok: false, fix: 'Run node scripts/setup.mjs --plantuml or set PLANTUML_JAR.' }); }
   const browserRoot = process.env.PLAYWRIGHT_BROWSERS_PATH || path.join(toolkitRoot, '.tools/ms-playwright');
   try {
