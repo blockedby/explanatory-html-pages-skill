@@ -1,0 +1,8 @@
+@startuml
+[*] --> Draft
+Draft --> Submitted: submit
+Submitted --> Approved: review succeeds
+Submitted --> Rejected: review fails
+Rejected --> Draft: revise
+Approved --> [*]
+@enduml

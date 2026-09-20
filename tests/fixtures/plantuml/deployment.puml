@@ -1,0 +1,13 @@
+@startuml
+node "Client device" as Client {
+  artifact Browser
+}
+node "Application host" as Host {
+  artifact "Order API" as API
+}
+node "Database host" {
+  database PostgreSQL
+}
+Browser --> API: HTTPS
+API --> PostgreSQL: TLS
+@enduml

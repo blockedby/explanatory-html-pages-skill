@@ -1,0 +1,9 @@
+@startuml
+component Gateway
+component Orders
+queue Events
+database Ledger
+Gateway --> Orders: HTTPS
+Orders --> Ledger: SQL
+Orders --> Events: OrderAccepted
+@enduml

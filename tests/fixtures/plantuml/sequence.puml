@@ -1,0 +1,14 @@
+@startuml
+actor Customer
+participant API
+participant Ledger
+Customer -> API: Submit order
+API -> Ledger: Reserve credit
+alt Credit available
+  Ledger --> API: Reserved
+  API --> Customer: Accepted
+else Limit exceeded
+  Ledger --> API: Rejected
+  API --> Customer: Explain limit
+end
+@enduml

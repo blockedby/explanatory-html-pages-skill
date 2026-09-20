@@ -1,0 +1,14 @@
+@startuml
+left to right direction
+actor Customer
+actor Reviewer
+rectangle "Order service" {
+  usecase "Place order" as Place
+  usecase "Check credit" as Check
+  usecase "Review exception" as Review
+}
+Customer --> Place
+Place .> Check : includes
+Reviewer --> Review
+Review .> Place : extends
+@enduml
