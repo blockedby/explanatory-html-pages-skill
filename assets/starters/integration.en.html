@@ -1,0 +1,10 @@
+<section id="contract">
+  <h2>One request, one recorded result</h2>
+  <p>The client submits an order with an idempotency key. The API uses that key to recognize retries and avoid creating a second order when the client did not receive the first response.</p>
+  <table class="boundary-table"><caption>Small illustrative request contract</caption><thead><tr><th scope="col">Field</th><th scope="col">Meaning</th><th scope="col">Rule</th></tr></thead><tbody><tr><td>Idempotency-Key</td><td>Identity of one intended operation</td><td>Reuse for a retry, not for a different order</td></tr><tr><td>items</td><td>Requested order lines</td><td>At least one valid line</td></tr></tbody></table>
+</section>
+<section id="exchange">
+  <h2>Success and rejection</h2>
+  <figure data-diagram="plantuml" data-source="diagrams/exchange.puml"><figcaption>The API distinguishes an invalid request from a successfully recorded order. The sequence shows message order, not a guarantee that every network response arrives.</figcaption></figure>
+</section>
+<section id="recovery"><h2>Recover without guessing</h2><p>After a timeout the caller does not know whether the request was accepted. Retry with the same key according to the service contract, rather than creating a new operation immediately.</p></section>

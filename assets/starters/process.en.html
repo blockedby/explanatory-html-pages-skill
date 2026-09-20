@@ -1,0 +1,13 @@
+<section id="scope">
+  <h2>Expense review: scope and outcome</h2>
+  <p>The process starts when an employee submits an expense. A reviewer checks the receipt and records a decision. Payment execution is outside this small process; the result is a recorded review, not a promise that money has moved.</p>
+  <dl><dt>Actor</dt><dd>Expense reviewer.</dd><dt>Input</dt><dd>A submitted expense with supporting evidence.</dd><dt>Output</dt><dd>A recorded decision available to the next process.</dd></dl>
+</section>
+<section id="process">
+  <h2>The process in BPMN</h2>
+  <figure data-diagram="bpmn" data-source="diagrams/process.bpmn"><figcaption>A submitted expense is reviewed before the decision is recorded. This deliberately small BPMN process has no payment step.</figcaption></figure>
+</section>
+<section id="exceptions">
+  <h2>Make exceptions explicit</h2>
+  <p>Missing evidence and disputed decisions need their own agreed handling. Add those branches when the rules are available; do not silently interpret a missing receipt as an approval.</p>
+</section>
