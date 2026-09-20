@@ -1,18 +1,11 @@
-import { spawn } from 'node:child_process';
-import { mkdtemp, rm, access } from 'node:fs/promises';
-import { constants } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { resolve, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { Worker } from 'node:worker_threads';
 
-const DEFAULT_ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const MAX_SOURCE_BYTES = 256 * 1024;
 const MAX_OUTPUT_BYTES = 8 * 1024 * 1024;
-const MAX_STDERR_BYTES = 64 * 1024;
+const MAX_DIAGNOSTIC_BYTES = 64 * 1024;
 
-// Owned by the renderer, not supplied through an external config/include file.
-const STYLE = `!pragma layout smetana
-skinparam monochrome true
+// Owned by the renderer; Viz.js WASM supplies layout, without a layout pragma.
+const STYLE = `skinparam monochrome true
 skinparam backgroundColor transparent
 skinparam shadowing false
 skinparam defaultFontName SansSerif
@@ -25,6 +18,9 @@ skinparam ArrowColor #333333
 skinparam LineColor #333333
 skinparam defaultFontColor #222222
 skinparam sequenceMessageAlign center
+skinparam sequenceParticipantBackgroundColor #EEEEEE
+skinparam actorBackgroundColor #EEEEEE
+hide circle
 hide footbox`;
 
 function prepareSource(source) {
@@ -35,9 +31,8 @@ function prepareSource(source) {
   if (/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/u.test(source)) {
     throw new Error('PlantUML source contains unsupported control characters');
   }
-  // Deliberately conservative subset: no preprocessor, built-in function, image,
-  // style/layout replacement or pagination. Scan even comments/quoted text, and
-  // joined continuation lines, rather than trying to reproduce PlantUML's parser.
+  // Scan comments/quoted text and joined continuations too: deliberately not a
+  // full parser. No preprocessor, resource loading, styles or pagination.
   const scan = source.replace(/\\\r?\n/g, '');
   if (/!|%\s*[a-z_][\w]*\s*\(|<\s*(?:img|image|style)\b|\b(?:skinparam|skin|newpage)\b/iu.test(scan)) {
     throw new Error('PlantUML unsafe or unsupported directive: includes, preprocessors, functions, images, custom styles and newpage are disabled');
@@ -54,91 +49,60 @@ function prepareSource(source) {
   return normalized.replace(/^@startuml\s*\n/u, `@startuml\n${STYLE}\n`);
 }
 
-function run(java, jar, input, cwd, timeoutMs) {
-  return new Promise((resolveResult, reject) => {
-    // Never inherit JAVA_TOOL_OPTIONS, JDK_JAVA_OPTIONS, include paths, proxy
-    // settings or PlantUML profile overrides from the host. No shell or dot.
-    const child = spawn(java, [
-      '-Xmx256m', '-Djava.awt.headless=true', '-Dfile.encoding=UTF-8',
-      '-DPLANTUML_SECURITY_PROFILE=SANDBOX',
-      `-Djava.util.prefs.userRoot=${cwd}`, `-Djava.util.prefs.systemRoot=${cwd}`,
-      '-jar', jar, '--svg', '--pipe', '--charset', 'UTF-8',
-      '--no-error-image', '--disable-metadata',
-    ], {
-      cwd, shell: false, windowsHide: true,
-      env: { PATH: '', LANG: 'C.UTF-8', HOME: cwd,
-        PLANTUML_SECURITY_PROFILE: 'SANDBOX', PLANTUML_LIMIT_SIZE: '4096',
-        GRAPHVIZ_DOT: join(cwd, 'disabled-dot') },
-      stdio: ['pipe', 'pipe', 'pipe'],
+function run(source, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./plantuml-worker.mjs', import.meta.url), {
+      workerData: { source, maxOutputBytes: MAX_OUTPUT_BYTES, maxDiagnosticBytes: MAX_DIAGNOSTIC_BYTES },
+      // Do not inherit CLI preloads or host environment overrides.
+      execArgv: [], env: {}, stdout: true, stderr: true,
+      resourceLimits: { maxOldGenerationSizeMb: 256, maxYoungGenerationSizeMb: 32, stackSizeMb: 4 },
     });
-    let failure;
-    let outputBytes = 0;
-    let errorBytes = 0;
-    const stdout = [];
-    const stderr = [];
-    const stop = (error) => {
-      failure ??= error;
-      child.kill('SIGKILL');
-    };
-    const timer = setTimeout(() => stop(new Error(`PlantUML timed out after ${timeoutMs} ms`)), timeoutMs);
-    child.on('error', (error) => { failure ??= new Error(`Cannot start PlantUML Java runtime: ${error.message}`); });
-    child.stdin.on('error', (error) => {
-      // A failed renderer can close its pipe early; retain its exit diagnostics.
-      if (error.code !== 'EPIPE') stop(new Error(`PlantUML input failed: ${error.message}`));
-    });
-    child.stdout.on('data', (chunk) => {
-      outputBytes += chunk.length;
-      if (outputBytes > MAX_OUTPUT_BYTES) stop(new Error('PlantUML output exceeds the 8 MiB limit'));
-      else stdout.push(chunk);
-    });
-    child.stderr.on('data', (chunk) => {
-      errorBytes += chunk.length;
-      if (errorBytes > MAX_STDERR_BYTES) stop(new Error('PlantUML diagnostics exceed the 64 KiB limit'));
-      else stderr.push(chunk);
-    });
-    child.on('close', (code, signal) => {
+    let settled = false;
+    let diagnosticBytes = 0;
+    let diagnostics = '';
+    const finish = (error, result) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
-      if (failure) return reject(failure);
-      const diagnostics = Buffer.concat(stderr).toString('utf8').trim();
-      if (code !== 0) {
-        return reject(new Error(`PlantUML rendering failed (exit ${code ?? signal}): ${diagnostics.slice(0, 2000) || 'no diagnostics'}`));
+      // Await teardown so success, timeout and errors never leave a worker alive.
+      worker.terminate().then(() => error ? reject(error) : resolve(result), reject);
+    };
+    const timer = setTimeout(() => finish(new Error(`PlantUML timed out after ${timeoutMs} ms`)), timeoutMs);
+    for (const stream of [worker.stdout, worker.stderr]) {
+      stream.on('data', (chunk) => {
+        diagnosticBytes += chunk.length;
+        if (diagnosticBytes > MAX_DIAGNOSTIC_BYTES) {
+          finish(new Error('PlantUML diagnostics exceed the 64 KiB limit'));
+        } else if (diagnostics.length < 2000) diagnostics += chunk.toString('utf8').slice(0, 2000 - diagnostics.length);
+      });
+    }
+    worker.on('error', (error) => finish(new Error(`PlantUML JS worker failed: ${error.message}`)));
+    worker.on('exit', (code) => finish(new Error(`PlantUML JS worker exited without a result (exit ${code}): ${diagnostics}`)));
+    worker.on('message', (result) => {
+      if (result?.error) return finish(new Error(`PlantUML rendering failed: ${result.error}`));
+      const svg = result?.svg;
+      if (typeof svg !== 'string' || Buffer.byteLength(svg) > MAX_OUTPUT_BYTES
+          || (svg.match(/<svg\b/g) ?? []).length !== 1 || !/<\/svg>\s*$/u.test(svg)
+          || /id=["'](?:error|plantuml-error)["']|data-diagram-type=["']ERROR["']|Syntax Error\? \(Assumed diagram type:/i.test(svg)) {
+        return finish(new Error('PlantUML JS engine did not produce a single successful SVG'));
       }
-      const svg = Buffer.concat(stdout).toString('utf8');
-      // --no-error-image plus exit status is primary; also refuse known renderer
-      // error artifacts and multiple SVG documents. Sanitization is the caller's job.
-      if (/\b(?:Syntax Error|Error line \d+|java\.lang\.\w*(?:Exception|Error))\b/i.test(diagnostics)
-          || /id=["'](?:error|plantuml-error)["']|data-diagram-type=["']ERROR["']|Syntax Error\? \(Assumed diagram type:/i.test(svg)
-          || (svg.match(/<svg\b/g) ?? []).length !== 1
-          || !/<\/svg>\s*$/u.test(svg)) {
-        return reject(new Error(`PlantUML did not produce a single successful SVG: ${diagnostics.slice(0, 2000)}`));
+      if (!Array.isArray(result.warnings) || result.warnings.some((value) => typeof value !== 'string')) {
+        return finish(new Error('PlantUML JS engine returned invalid warnings'));
       }
-      resolveResult(svg);
+      finish(null, result);
     });
-    child.stdin.end(input, 'utf8');
   });
 }
 
-/** Render a single editable PlantUML diagram locally; returned SVG is NOT sanitized. */
+/** Local JS/WASM rendering. toolkitRoot is retained for compatibility, ignored.
+ * Returned SVG is NOT sanitized. Heap/WASM growth caps are not an OS-level RSS limit.
+ */
 export async function renderPlantUml(source, options = {}) {
   const input = prepareSource(source);
   const timeoutMs = options.timeoutMs ?? 15_000;
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 120_000) {
     throw new RangeError('PlantUML timeoutMs must be an integer from 1 to 120000');
   }
-  const root = resolve(options.toolkitRoot ?? DEFAULT_ROOT);
-  const java = resolve(process.env.JAVA_BIN || join(root, '.tools/jre/bin/java'));
-  const jar = resolve(process.env.PLANTUML_JAR || join(root, '.tools/plantuml.jar'));
-  try {
-    await access(java, constants.X_OK);
-    await access(jar, constants.R_OK);
-  } catch (error) {
-    throw new Error(`PlantUML local tooling unavailable; prepare .tools/jre/bin/java and .tools/plantuml.jar or set JAVA_BIN and PLANTUML_JAR: ${error.message}`);
-  }
-  const cwd = await mkdtemp(join(tmpdir(), 'plantuml-render-'));
-  try {
-    const svg = await run(java, jar, input, cwd, timeoutMs);
-    return { svg, source, extension: 'puml', warnings: [] };
-  } finally {
-    await rm(cwd, { recursive: true, force: true });
-  }
+  const { svg, warnings } = await run(input, timeoutMs);
+  return { svg, source, extension: 'puml', warnings };
 }

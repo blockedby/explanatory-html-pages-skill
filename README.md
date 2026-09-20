@@ -38,7 +38,7 @@ Open `report.html` directly. It contains its theme, navigation and static SVG, s
 - Presets: `explainer`, `process`, `integration`.
 - Shell languages: English and Russian; content and labels are authored normally.
 - Create refuses existing directories. Build requires an explicit output and preserves the previous HTML on failure.
-- For text/native-flow documents, `setup.mjs --npm` is sufficient.
+- For text, native-flow and PlantUML documents, `setup.mjs --npm` is sufficient. No Java/JRE is required; only BPMN needs Chromium.
 
 ## What is reusable
 
@@ -69,7 +69,7 @@ Use native markup for short conceptual flows, PlantUML for UML/technical relatio
 
 Simple missing-DI BPMN processes can be auto-laid out. Advanced collaborations, lanes, message flows and subprocesses require complete supplied DI. Unsupported/incomplete rendering fails explicitly instead of silently discarding notation. This toolkit is not a process execution engine and does not certify business correctness.
 
-Automatic bundled Java setup supports Linux x64; other platforms require a local Java 21 executable. Chromium needs a Playwright-supported platform and system libraries. Builds never install or download dependencies implicitly. See [rendering and troubleshooting](references/rendering.md).
+PlantUML uses the official TeaVM JavaScript engine plus Viz.js WASM in Node workers—no JRE, JAR, native Graphviz or MCP server. Chromium is only needed for BPMN and requires a Playwright-supported platform and system libraries. Builds never install or download dependencies implicitly. See [rendering and troubleshooting](references/rendering.md).
 
 ## Authoring references
 
@@ -95,4 +95,4 @@ Change the canonical assets or component snippets, then run `npm run build:examp
 
 ## License
 
-MIT for this repository. PlantUML, Java, Chromium and npm dependencies retain their respective upstream licenses; binaries are downloaded locally, not redistributed in this repository. Final exported diagrams do not include the renderer programs.
+MIT for this repository. PlantUML, Viz.js, Chromium and npm dependencies retain their respective upstream licenses; dependencies are installed locally, not redistributed in this repository. Final exported diagrams do not include the renderer programs.

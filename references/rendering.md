@@ -2,7 +2,7 @@
 
 ## What runs where
 
-Authoring uses Node 22.12+, pinned npm dependencies, local Java/PlantUML for UML, and local Playwright Chromium plus bpmn-js for BPMN. The finished HTML embeds CSS, navigation JS and static SVG. Reading needs no Node, Java, browser extension, server, public renderer or network connection.
+Authoring uses Node 22.12+, the pinned PlantUML JavaScript engine with Viz.js WASM for UML, and local Playwright Chromium plus bpmn-js for BPMN. No JRE, JAR, system Java or native Graphviz is needed. The finished HTML embeds CSS, navigation JS and static SVG. Reading needs no Node, Java, browser extension, server, public renderer or network connection.
 
 Setup is the only online step:
 
@@ -15,17 +15,16 @@ You can install in parts:
 
 ```sh
 node /path/to/skill/scripts/setup.mjs --npm
-node /path/to/skill/scripts/setup.mjs --plantuml
 node /path/to/skill/scripts/setup.mjs --browser
 ```
 
-The npm lockfile pins JavaScript tooling. PlantUML 1.2026.8 and Temurin JRE 21.0.12.1+1 downloads are SHA-256 checked; URLs/digests live in `scripts/lib/tooling.mjs`. Playwright manages its pinned Chromium revision. Downloaded tools and npm modules stay ignored under `.tools/` and `node_modules/`; they are not embedded into the reader's HTML.
+The npm lockfile pins tooling and package integrity hashes, including `@plantuml/mcp-js@0.2.2` and `@viz-js/viz@3.28.0`. We import only the bundled TeaVM `engine.js`, not the package's MCP server. There is no MCP service to configure or start. `setup.mjs --npm` is sufficient for PlantUML; Chromium is needed only for BPMN. Playwright manages its pinned Chromium revision. Downloaded tools and npm modules stay ignored under `.tools/` and `node_modules/`; they are not embedded into the reader's HTML.
 
-Automatic JRE installation currently supports Linux x64. On other platforms, install Java 21 locally and set `JAVA_BIN` to its executable's absolute path. `PLANTUML_JAR` can override the local jar. The browser requires a Playwright-supported OS and its normal system libraries. The renderer resolves Playwright's platform/revision-specific executable in the local toolkit cache; set `PLAYWRIGHT_BROWSERS_PATH` to a custom cache directory or `BPMN_CHROMIUM_EXECUTABLE` to an explicit local executable when needed. Setup does not install operating-system packages or escalate privileges. Doctor reports installation presence; real renderer tests verify operation.
+There is no Java installation step or Java fallback. The BPMN browser requires a Playwright-supported OS and its normal system libraries. The renderer resolves Playwright's platform/revision-specific executable in the local toolkit cache; set `PLAYWRIGHT_BROWSERS_PATH` to a custom cache directory or `BPMN_CHROMIUM_EXECUTABLE` to an explicit local executable when needed. Setup does not install operating-system packages or escalate privileges. Doctor reports installation presence; real renderer tests verify operation.
 
 ## PlantUML
 
-Source files use `.puml` with exactly one `@startuml` / `@enduml` block. The renderer owns monochrome styling and Smetana layout. No system Graphviz is needed for the tested diagram families: sequence, state, activity, use case, component, deployment and entity relationships.
+Source files use `.puml` with exactly one `@startuml` / `@enduml` block. The renderer owns monochrome styling and uses Viz.js WASM where Graphviz layout is required. No system Graphviz is needed for the tested diagram families: sequence, state, activity, use case, component, deployment and entity relationships.
 
 ```plantuml
 @startuml
@@ -42,7 +41,7 @@ end
 
 The safe source subset deliberately excludes preprocessors/includes, built-in functions, images, custom skin/style/layout replacement, multiple diagrams and pagination. The conservative scanner also applies to comments and quoted text; avoid directive-like text or exclamation marks in labels. These are toolkit limits, not a claim that PlantUML itself lacks those features. Keep explanation in document prose when a label would require excluded syntax.
 
-Execution uses Java's PlantUML sandbox profile, controlled environment, no shell, a temporary working directory, and bounded time/output. Input is limited to 256 KiB; generated SVG to 8 MiB. Syntax errors and renderer error images are failures, not successful diagrams. The editable source embedded in the report remains the author's original input, not the injected styling.
+Execution uses a cancellable Node worker thread with bounded time/memory/output, restricted source syntax and blocked network APIs. No Java process, shell, public renderer or runtime download is used. Input is limited to 256 KiB; generated SVG to 8 MiB. Syntax errors and renderer error images are failures, not successful diagrams. The editable source embedded in the report remains the author's original input, not the injected styling.
 
 ## BPMN
 
@@ -65,7 +64,7 @@ Diagram sources are escaped text in a native disclosure and can be downloaded of
 | Symptom | Action |
 | --- | --- |
 | Missing npm module | Run `setup.mjs --npm` in the installed toolkit. |
-| Java/JAR unavailable | Run `setup.mjs --plantuml`, or set absolute `JAVA_BIN` and `PLANTUML_JAR`. |
+| PlantUML JS engine unavailable | Run `setup.mjs --npm`. Java and `JAVA_BIN`/`PLANTUML_JAR` are no longer used. |
 | Browser unavailable | Run `setup.mjs --browser`; check OS/library support. |
 | PlantUML unsafe directive | Remove includes/functions/styles; use the shared rendering policy. |
 | BPMN missing DI / unrendered elements | Supply complete explicit DI or simplify to a supported single-process model. |

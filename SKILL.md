@@ -17,7 +17,7 @@ Resolve every path below relative to this skill's directory, wherever it was ins
    node /path/to/skill/scripts/setup.mjs
    node /path/to/skill/scripts/document.mjs doctor
    ```
-   Setup downloads pinned tooling; builds do not. For text/native-flow documents, `setup.mjs --npm` is sufficient. For diagrams and platform limitations, read [rendering.md](references/rendering.md).
+   Setup downloads pinned tooling; builds do not. For text/native-flow and PlantUML documents, `setup.mjs --npm` is sufficient. PlantUML uses JavaScript/WASM, not Java; only BPMN needs Chromium. For diagrams and platform limitations, read [rendering.md](references/rendering.md).
 3. Scaffold in a **new directory**:
    ```sh
    node /path/to/skill/scripts/document.mjs create /path/to/document \

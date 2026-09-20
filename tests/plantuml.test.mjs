@@ -1,13 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { Worker } from 'node:worker_threads';
 import { JSDOM } from 'jsdom';
 import { renderPlantUml } from '../scripts/renderers/plantuml.mjs';
 
-const root = fileURLToPath(new URL('../', import.meta.url));
 const simple = '@startuml\nAlice -> Bob: Hello\n@enduml';
 const cases = {
   sequence: ['Customer', 'API', 'Ledger', 'Accepted', 'Explain limit'],
@@ -20,7 +18,7 @@ const cases = {
 };
 
 for (const [name, labels] of Object.entries(cases)) {
-  test(`real local Java/Smetana renders ${name}`, async () => {
+  test(`real offline JS/Viz.js renders ${name}`, async () => {
     const source = await readFile(new URL(`./fixtures/plantuml/${name}.puml`, import.meta.url), 'utf8');
     const result = await renderPlantUml(source);
     assert.equal(result.source, source);
@@ -46,13 +44,25 @@ for (const [name, labels] of Object.entries(cases)) {
 }
 
 test('real syntax failure is rejected, never returned as an error SVG', async () => {
-  await assert.rejects(renderPlantUml('@startuml\nAlice -> Bob\nthis is invalid syntax\n@enduml'), /rendering failed.*exit 200[\s\S]*Syntax Error/i);
+  await assert.rejects(renderPlantUml('@startuml\nAlice -> Bob\nthis is invalid syntax\n@enduml'), /rendering failed.*syntax check.*Syntax Error/i);
 });
 
-test('real Java render has a bounded deadline', async () => {
+test('real JS render has a bounded deadline', async () => {
   const started = Date.now();
   await assert.rejects(renderPlantUml(simple, { timeoutMs: 1 }), /timed out after 1 ms/);
-  assert.ok(Date.now() - started < 5000, 'timed-out process must close promptly');
+  assert.ok(Date.now() - started < 5000, 'timed-out worker must close promptly');
+});
+
+test('deadline interrupts a busy engine without blocking the parent event loop', async () => {
+  let ticks = 0;
+  const interval = setInterval(() => { ticks++; }, 20);
+  const started = Date.now();
+  try {
+    const source = `@startuml\n${'A -> B: message\n'.repeat(15000)}@enduml`;
+    await assert.rejects(renderPlantUml(source, { timeoutMs: 800 }), /timed out after 800 ms/);
+    assert.ok(ticks >= 5, `parent only ticked ${ticks} times`);
+    assert.ok(Date.now() - started < 5000, 'busy worker must terminate promptly');
+  } finally { clearInterval(interval); }
 });
 
 test('rejects includes, preprocessors, resource loading and renderer overrides before launch', async () => {
@@ -86,62 +96,79 @@ test('rejects invalid envelopes, types, control characters and excess source', a
   }
 });
 
-test('missing local tooling has actionable diagnostics', async () => {
-  const prior = { JAVA_BIN: process.env.JAVA_BIN, PLANTUML_JAR: process.env.PLANTUML_JAR };
-  delete process.env.JAVA_BIN;
-  delete process.env.PLANTUML_JAR;
-  try {
-    await assert.rejects(renderPlantUml(simple, { toolkitRoot: '/missing-toolkit' }), /local tooling unavailable.*JAVA_BIN and PLANTUML_JAR/);
-  } finally { restoreEnv(prior); }
-});
-
-function restoreEnv(values) {
-  for (const [name, value] of Object.entries(values)) {
-    if (value === undefined) delete process.env[name];
-    else process.env[name] = value;
-  }
-}
-
-test('explicit tool overrides work; hostile Java/profile environment is not inherited', async () => {
-  const keys = ['JAVA_BIN', 'PLANTUML_JAR', 'JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', 'PLANTUML_SECURITY_PROFILE', 'GRAPHVIZ_DOT'];
+test('renders with no toolkit, executable PATH or inherited runtime options', async () => {
+  const keys = ['PATH', 'NODE_OPTIONS', 'JAVA_BIN', 'PLANTUML_JAR', 'JAVA_TOOL_OPTIONS', 'GRAPHVIZ_DOT'];
   const prior = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
   try {
-    process.env.JAVA_BIN = join(root, '.tools/jre/bin/java');
-    process.env.PLANTUML_JAR = join(root, '.tools/plantuml.jar');
-    process.env.JAVA_TOOL_OPTIONS = '-not-a-real-option';
-    process.env.JDK_JAVA_OPTIONS = '-not-a-real-option';
-    process.env.PLANTUML_SECURITY_PROFILE = 'UNSECURE';
-    process.env.GRAPHVIZ_DOT = '/must-not-run-dot';
+    for (const key of keys) process.env[key] = '/must-not-be-used';
     const source = `\uFEFF${simple.replaceAll('\n', '\r\n')}\r\n`;
     const result = await renderPlantUml(source, { toolkitRoot: '/missing-toolkit' });
     assert.equal(result.source, source);
     assert.match(result.svg, /Hello/);
-  } finally { restoreEnv(prior); }
+  } finally {
+    for (const [key, value] of Object.entries(prior)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
-// Fault injection tests only: every successful-render assertion above uses the
-// real prepared JRE/JAR. These exercise OS stream limits and abnormal termination.
-test('bounds stdout/stderr and rejects zero-exit non-SVG output', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'plantuml-fault-test-'));
-  const prior = { JAVA_BIN: process.env.JAVA_BIN, PLANTUML_JAR: process.env.PLANTUML_JAR };
+test('resource URLs are rejected without contacting a local server', async () => {
+  let requests = 0;
+  const server = createServer((_request, response) => { requests++; response.end('unexpected'); });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   try {
-    const executable = join(dir, 'fake java; no shell');
-    process.env.JAVA_BIN = executable;
-    process.env.PLANTUML_JAR = join(root, '.tools/plantuml.jar');
-    for (const [program, expected] of [
-      ['process.stdout.write("x".repeat(9*1024*1024));', /output exceeds/],
-      ['process.stderr.write("x".repeat(70*1024));', /diagnostics exceed/],
-      ['process.stdout.write("not SVG");', /single successful SVG/],
-      ['process.stdout.write("<svg></svg><svg></svg>");', /single successful SVG/],
-      ['process.stdout.write("<svg><text>Syntax Error? (Assumed diagram type: sequence)</text></svg>");', /single successful SVG/],
-      ['process.stdout.write("<svg id=\\"error\\"></svg>");', /single successful SVG/],
-      ['process.stderr.write("deliberate failure"); process.exit(9);', /exit 9.*deliberate failure/],
-    ]) {
-      await writeFile(executable, `#!${process.execPath}\nprocess.stdin.resume();\n${program}\n`, { mode: 0o700 });
-      await assert.rejects(renderPlantUml(simple), expected);
+    const url = `http://127.0.0.1:${server.address().port}/resource`;
+    for (const body of [`!includeurl ${url}`, `Alice -> Bob: <img:${url}>`, `title %load_json("${url}")`]) {
+      await assert.rejects(renderPlantUml(`@startuml\n${body}\n@enduml`), /unsafe/);
     }
+    assert.match((await renderPlantUml(simple)).svg, /Hello/);
+    assert.equal(requests, 0);
+  } finally { await new Promise((resolve) => server.close(resolve)); }
+});
+
+test('worker blocks network APIs and WASM growth; real engine enforces output cap', async () => {
+  const workerUrl = new URL('../scripts/renderers/plantuml-worker.mjs', import.meta.url).href;
+  // Load the actual worker/engine, then probe its isolation in that same realm.
+  const program = `
+    const { parentPort } = await import('node:worker_threads');
+    await import(${JSON.stringify(workerUrl)});
+    const assert = (await import('node:assert/strict')).default;
+    for (const name of ['fetch', 'WebSocket', 'XMLHttpRequest', 'EventSource', 'WebTransport']) {
+      assert.throws(() => globalThis[name]('http://127.0.0.1:9'), /network access is disabled/);
+    }
+    for (const [module, method] of [['http', 'request'], ['https', 'get'], ['http2', 'connect'], ['net', 'connect'], ['tls', 'connect'], ['dgram', 'createSocket'], ['dns', 'lookup']]) {
+      assert.throws(() => require('node:' + module)[method]('127.0.0.1'), /network access is disabled/);
+    }
+    assert.throws(() => new WebAssembly.Memory({ initial: 1 }).grow(2048), /128 MiB/);
+    parentPort.postMessage({ probesPassed: true });
+  `;
+  const worker = new Worker(`(async () => { ${program} })().catch(error => { throw error; });`, {
+    eval: true, execArgv: [], env: {}, stdout: true, stderr: true,
+    workerData: { source: simple, maxOutputBytes: 128, maxDiagnosticBytes: 65536 },
+    resourceLimits: { maxOldGenerationSizeMb: 256, maxYoungGenerationSizeMb: 32 },
+  });
+  const messages = [];
+  let timer;
+  try {
+    await new Promise((resolve, reject) => {
+      timer = setTimeout(() => reject(new Error('worker probes timed out')), 15000);
+      worker.on('error', reject);
+      worker.on('message', (message) => { messages.push(message); if (message.probesPassed) resolve(); });
+      worker.on('exit', () => { if (!messages.some((message) => message.probesPassed)) reject(new Error('probe worker exited early')); });
+      worker.stdout.resume();
+      worker.stderr.resume();
+    });
+    assert.match(messages[0].error, /output exceeds the 8 MiB limit/);
   } finally {
-    restoreEnv(prior);
-    await rm(dir, { recursive: true, force: true });
+    clearTimeout(timer);
+    await worker.terminate();
   }
+});
+
+test('real large diagram is bounded and the renderer recovers', async () => {
+  const source = `@startuml\n${'A -> B: message\n'.repeat(15000)}@enduml`;
+  assert.ok(Buffer.byteLength(source) < 256 * 1024);
+  await assert.rejects(renderPlantUml(source, { timeoutMs: 120000 }), /8 MiB|resource limit|memory limit|heap|diagnostics exceed/i);
+  assert.match((await renderPlantUml(simple)).svg, /Hello/);
 });

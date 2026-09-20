@@ -31,7 +31,7 @@ Files: `assets/components.css`, `assets/components/*.html`, `references/componen
 ### PlantUML worker
 Files: `scripts/renderers/plantuml.mjs`, `tests/plantuml.test.mjs`, `tests/fixtures/plantuml/*` only.
 Export `async function renderPlantUml(source, options = {})` -> `{ svg: string, source: string, extension: 'puml', warnings: string[] }`.
-Options `{ toolkitRoot?: string, timeoutMs?: number }` defaults root from module path (`../../`); bounded source/output/runtime. Runtime default `.tools/jre/bin/java`, JAR `.tools/plantuml.jar`; permit explicit `JAVA_BIN`, `PLANTUML_JAR` overrides. No system Graphviz; bundled Smetana where applicable. Pinned local tooling exists. Shared compact monochrome style. Raw source retained; reject remote/local includes or unsupported unsafe preprocessors rather than reading/network. Java sandbox and pipe input, no shell interpolation. Real tests for requested types and errors. Returned SVG is raw; parent calls central sanitizer. No new deps/manifests or core builder edits.
+Options `{ toolkitRoot?: string, timeoutMs?: number }`; bounded source/output/runtime. Runtime is the pinned TeaVM engine from `@plantuml/mcp-js/engine.js` plus `@viz-js/viz` in a cancellable Node worker. Never import/start the MCP server. No Java/JRE/JAR, native Graphviz, Java environment overrides or fallback. Shared compact monochrome style. Raw source retained; reject remote/local includes or unsafe preprocessors and block network. Real tests for all seven diagram families and errors. Returned SVG is raw; parent calls central sanitizer. Worker ownership includes `scripts/renderers/plantuml-worker.mjs` if needed; parent owns dependencies and integration.
 
 ### BPMN worker
 Files: `scripts/renderers/bpmn.mjs`, `tests/bpmn.test.mjs`, `tests/fixtures/bpmn/*` only.
@@ -46,7 +46,7 @@ Export `function prepareSvg(rawSvg, { prefix, title })` -> safe namespaced SVG s
 Owns `scripts/document.mjs`, `scripts/lib/*`, setup/doctor scripts, package manifests, shell assembly, scaffold starters, `examples/*`, build/unit/browser tests outside above worker files, README, SKILL.md, Python validator, issue updates and all commits.
 
 ## Prepared tooling
-Node24; pinned deps in package.json/lock. Java `.tools/jre/bin/java`, JAR `.tools/plantuml.jar`; browser root `.tools/ms-playwright` and tested Chromium `.tools/ms-playwright/chromium-1243/chrome-linux64/chrome`. Host requires `--no-sandbox` for local Chromium. Renderer tests must use temporary local files or memory and block network. Pin details in parent issue. No binaries or node_modules committed.
+Node24; pinned deps in package.json/lock. Local JRE/JAR and archive removed at user request. PlantUML runs in Node with its JS/WASM dependencies. BPMN browser root `.tools/ms-playwright`; executable resolved via Playwright's platform/revision-specific path. Host requires `--no-sandbox` for local Chromium. Renderer tests must use memory or temporary local files and block network. No binaries or node_modules committed.
 
 ## Verification/handoff
 Workers run focused tests and report conclusion first, changed files, commands/results, limitations, recommended next step. No Git commits or issue operations. Main integrates and verifies three complete documents plus catalog offline/desktop/mobile/print and records evidence/commits in issue #1. Never mark business correctness proven; syntax/rendering checks suffice.
