@@ -15,7 +15,7 @@ export async function doctor() {
   const checks = [];
   const [major, minor] = process.versions.node.split('.').map(Number);
   checks.push({ tool: 'Node', ok: major > 22 || (major === 22 && minor >= 12), version: process.versions.node });
-  for (const name of ['parse5', 'jsdom', 'dompurify', 'bpmn-js', 'bpmn-moddle', 'bpmn-auto-layout', 'playwright', 'esbuild']) {
+  for (const name of ['parse5', 'jsdom', 'dompurify', 'bpmn-js', 'bpmn-moddle', 'bpmn-auto-layout', 'playwright']) {
     try { require.resolve(name); checks.push({ tool: name, ok: true }); }
     catch { checks.push({ tool: name, ok: false, fix: 'Run node scripts/setup.mjs --npm' }); }
   }
