@@ -88,6 +88,6 @@ Before delivery:
 1. Build from the editable sources.
 2. Open the HTML offline on desktop and at about 390px wide.
 3. Use the topics disclosure, keyboard Tab, Enter and Escape; follow a final-section anchor.
-4. Read long labels and inspect diagrams with local horizontal scrolling.
+4. Inspect actual text layout, not only absence of overflow: long headings and inline code must wrap legibly; note sentences must remain continuous; short-label and single-paragraph callouts must not leave empty grid columns. Check that prose and fact blocks have coherent reading widths. Inspect diagrams with local horizontal scrolling.
 5. Check print preview, including expanded native details and diagram source behavior.
 6. Deliver the HTML and preserve the source directory for future edits.

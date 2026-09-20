@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import os from 'node:os';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { toolkitRoot } from '../scripts/lib/paths.mjs';
 
@@ -91,6 +93,124 @@ test('standalone examples remain usable offline on desktop, mobile and print', a
   }
   assert.deepEqual(network, [], 'Reading documents must not request network assets.');
 });
+test('semantic callouts keep natural flow and structured variants keep intentional columns', async t => {
+  const fixtureDir = await mkdtemp(path.join(os.tmpdir(), 'documentation-layout-'));
+  t.after(() => rm(fixtureDir, { recursive: true, force: true }));
+  const [theme, components] = await Promise.all([
+    readFile(path.join(toolkitRoot, 'assets/theme.css'), 'utf8'),
+    readFile(path.join(toolkitRoot, 'assets/components.css'), 'utf8'),
+  ]);
+  const fixturePath = path.join(fixtureDir, 'layout-regression.html');
+  await writeFile(fixturePath, `<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>${theme}\n${components}</style><title>Layout regression</title></head><body>
+<details class="topic-panel" id="topic-panel" open><summary class="topic-toggle"><span class="topic-icon">☰</span><span class="topic-label">Содержание</span></summary><nav class="toc"><ul><li><a href="#ordinary">Обычный контент</a></li><li><a href="#structured">Структурный контент</a></li></ul></nav></details>
+<main class="page document-content">
+<section id="ordinary"><h2><code>explanatory-html-pages-with-an-intentionally-long-skill-name</code>: офлайн-документ через общий design system</h2>
+<p class="fixture-prose">Скилл превращает материалы в читаемый документ. Основной текст сохраняет удобную длину строки и общую левую границу с фактами.</p>
+<div class="definition"><p class="definition-label">Главный принцип</p><p>Выбирайте скилл по требуемому результату и типу доказательств, а не по сходству названия с темой задачи.</p></div>
+<dl class="doc-facts"><dt>Когда выбрать</dt><dd>Нужен содержательный офлайн HTML с общей темой и семантическими компонентами.</dd><dt>Ожидаемый результат</dt><dd><code>document.json</code>, обычный <code>content.html</code> и собранный автономный HTML.</dd></dl>
+<aside class="note-strip" id="inline-note"><strong>Важно:</strong> при отсутствующих или неоднозначных критериях скилл не должен додумывать их; итогом будет <code>NOT VERIFIED</code>, а не оптимистичная готовность.</aside>
+<div class="takeaway" id="plain-takeaway"><p><strong>Практический вывод:</strong> начните с таблицы выбора, затем передайте агенту входы из карточки и явно разрешите только необходимые инструменты.</p></div></section>
+<section id="structured"><h2>Поддерживаемые структурные варианты</h2>
+<div class="definition" id="rich-definition"><div><p class="important">A reservation is a temporary promise.</p><p class="definition-detail">It is not a completed sale. Confirmation and expiry still need explicit outcomes.</p></div><dl class="signal-list"><div><dt>Claim</dt><dd>An item and quantity.</dd></div><div><dt>Exit</dt><dd>Confirm, cancel, or expire.</dd></div></dl></div>
+<aside class="note-strip" id="paragraph-note"><p>Один абзац с <code>NOT VERIFIED</code> не требует отдельной колонки.</p></aside>
+<aside class="note-strip" id="structured-note"><strong>Reuse the key.</strong><p>Retry the identical request with its original idempotency key.</p></aside>
+<div class="takeaway" id="structured-takeaway"><span class="takeaway-label">Key conclusion</span><p>A hold protects stock, not the whole purchase.</p></div>
+<div class="doc-table-scroll" tabindex="0"><table class="doc-table"><tr><th>Wide data remains wide</th><td>Tables retain their available measure rather than inheriting prose width.</td></tr></table></div>
+</section></main></body></html>`);
+
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
+  t.after(() => context.close());
+  const page = await context.newPage();
+  await page.goto(pathToFileURL(fixturePath).href);
+
+  const assertLayout = async (width, open) => {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+    await page.locator('#topic-panel').evaluate((node, shouldOpen) => { node.open = shouldOpen; }, open);
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true, `${width}px: page does not overflow`);
+
+    const metrics = await page.evaluate(() => {
+      const box = selector => document.querySelector(selector).getBoundingClientRect();
+      const firstRect = node => {
+        const range = document.createRange(); range.selectNode(node);
+        return [...range.getClientRects()].find(rect => rect.width > 0 && rect.height > 0);
+      };
+      const note = document.querySelector('#inline-note');
+      const noteParts = [...note.childNodes].filter(node => node.nodeType === Node.ELEMENT_NODE || node.textContent.trim()).map(firstRect);
+      const followsInReadingOrder = (current, previous) => {
+        const sharesLine = current.top < previous.bottom && current.bottom > previous.top;
+        return sharesLine ? current.left >= previous.left : current.top >= previous.bottom - 2;
+      };
+      const definition = box('#ordinary .definition');
+      const definitionLabel = box('#ordinary .definition-label');
+      const definitionCopy = box('#ordinary .definition > p:last-child');
+      const takeaway = box('#plain-takeaway');
+      const takeawayCopy = box('#plain-takeaway > p');
+      const heading = document.querySelector('#ordinary h2');
+      const headingCode = heading.querySelector('code');
+      const prose = box('.fixture-prose');
+      const facts = box('.doc-facts');
+      const richCopy = box('#rich-definition > div');
+      const signals = box('#rich-definition > .signal-list');
+      const structuredLabel = box('#structured-takeaway > .takeaway-label');
+      const structuredCopy = box('#structured-takeaway > p');
+      const noteLabel = box('#structured-note > strong');
+      const noteCopy = box('#structured-note > p');
+      return {
+        noteDisplay: getComputedStyle(note).display,
+        paragraphNoteDisplay: getComputedStyle(document.querySelector('#paragraph-note')).display,
+        noteText: note.textContent.replace(/\s+/g, ' ').trim(),
+        noteOrder: noteParts.every((rect, index, all) => index === 0 || followsInReadingOrder(rect, all[index - 1])),
+        noteRects: noteParts.map(({ top, right, bottom, left }) => ({ top, right, bottom, left })),
+        definitionRatio: definitionCopy.width / (definition.width - 40),
+        definitionGap: definitionCopy.top - definitionLabel.bottom,
+        takeawayRatio: takeawayCopy.width / (takeaway.width - 35.2),
+        headingFits: heading.scrollWidth <= heading.clientWidth + 1,
+        headingCode: { border: getComputedStyle(headingCode).borderTopWidth, padding: getComputedStyle(headingCode).paddingLeft, background: getComputedStyle(headingCode).backgroundColor },
+        measureDelta: Math.abs(prose.width - facts.width),
+        tableWiderThanFacts: box('.doc-table-scroll').width > facts.width + 100,
+        richColumns: signals.left > richCopy.right - 2,
+        structuredTakeawayColumns: structuredCopy.left > structuredLabel.right - 2,
+        structuredNoteColumns: noteCopy.left > noteLabel.right - 2,
+        richGrid: getComputedStyle(document.querySelector('#rich-definition')).gridTemplateColumns,
+        takeawayGrid: getComputedStyle(document.querySelector('#structured-takeaway')).gridTemplateColumns,
+        noteGrid: getComputedStyle(document.querySelector('#structured-note')).gridTemplateColumns,
+      };
+    });
+
+    assert.equal(metrics.noteDisplay, 'block', `${width}px: an inline note uses natural flow`);
+    assert.equal(metrics.paragraphNoteDisplay, 'block', `${width}px: a one-paragraph note must not reserve an empty column`);
+    assert.match(metrics.noteText, /^Важно: при .* NOT VERIFIED, а не оптимистичная готовность\.$/);
+    assert.equal(metrics.noteOrder, true, `${width}px: inline note fragments retain reading order (${JSON.stringify(metrics.noteRects)})`);
+    assert.ok(metrics.definitionRatio > 0.85, `${width}px: plain definition copy occupies its useful measure`);
+    assert.ok(metrics.definitionGap >= 0 && metrics.definitionGap <= 32, `${width}px: plain definition has a compact stack gap`);
+    assert.ok(metrics.takeawayRatio > 0.85, `${width}px: single-child takeaway occupies its useful measure`);
+    assert.equal(metrics.headingFits, true, `${width}px: long code heading wraps inside its heading`);
+    assert.deepEqual(metrics.headingCode, { border: '0px', padding: '0px', background: 'rgba(0, 0, 0, 0)' }, `${width}px: heading code is not a padded chip`);
+    assert.ok(metrics.measureDelta <= 2, `${width}px: prose and facts share a readable measure`);
+    if (width >= 768) {
+      if (width >= 1000) assert.equal(metrics.tableWiderThanFacts, true, `${width}px: data tables are not narrowed to prose measure`);
+      assert.equal(metrics.richColumns, true, `${width}px: rich definition retains columns`);
+      assert.equal(metrics.structuredTakeawayColumns, true, `${width}px: labelled takeaway retains columns`);
+      assert.equal(metrics.structuredNoteColumns, true, `${width}px: paragraph note retains columns`);
+    } else {
+      assert.equal(metrics.richGrid.split(/\s+/).length, 1, `mobile: rich definition stacks (${metrics.richGrid})`);
+      assert.equal(metrics.takeawayGrid.split(/\s+/).length, 1, `mobile: labelled takeaway stacks (${metrics.takeawayGrid})`);
+      assert.equal(metrics.noteGrid.split(/\s+/).length, 1, `mobile: paragraph note stacks (${metrics.noteGrid})`);
+    }
+  };
+
+  await assertLayout(1920, true);
+  await assertLayout(1440, false);
+  await page.locator('#topic-panel').evaluate(node => { node.open = true; });
+  await page.screenshot({ path: '/tmp/documentation-layout-regression-desktop.png', fullPage: true });
+  await assertLayout(768, true);
+  await assertLayout(390, false);
+  await page.screenshot({ path: '/tmp/documentation-layout-regression-mobile.png', fullPage: true });
+});
+
 test('native topics remain available with JavaScript disabled', async t => {
   const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   t.after(() => context.close());

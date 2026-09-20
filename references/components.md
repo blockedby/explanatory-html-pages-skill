@@ -68,7 +68,13 @@ These snippets reuse canonical theme classes; `components.css` does not redefine
 
 Do not stack all patterns just to display them. Use the catalog to browse; compose real documents around the reader's next question.
 
+Keep a sentence together inside a paragraph, including its inline `strong`, `code` and links. For a note with a separate label, use the snippet's label plus one complete paragraph—not separate blocks for fragments of the sentence. A short definition needs a compact text group; add a companion list only when there are real supporting facts, never to fill an empty column. A one-paragraph conclusion does not need an empty label column.
+
+Long technical names are valid in headings, but use `code` only for the identifier itself. Do not shorten or remove meaningful content to disguise a layout defect.
+
 ## Styling contract
+
+Callouts use natural text flow by default. Structured columns are reserved for a `.definition` with a direct `.signal-list`, a `.note-strip` with a direct `strong` label followed by its sole `p`, or a `.takeaway` with a direct `.takeaway-label`. These structures stack on narrow screens. Plain callouts and `.doc-facts` follow the prose measure; full data tables and diagram regions retain their wider layout.
 
 `assets/components.css` adds only optional `.doc-*` primitives. Load it after canonical `assets/theme.css` when assembling a catalog or report; shell integration belongs to the builder, not to source authors. No per-snippet stylesheet, runtime library, or custom DSL is needed.
 
@@ -95,4 +101,4 @@ For BPMN, use `data-diagram="bpmn"` and a `.bpmn` XML file. Paths must remain wi
 
 ## Checks and limits
 
-Parse source HTML and CSS, check unique IDs and referenced labels, then build the selected document. The integrated catalog still needs desktop, narrow-screen, keyboard, offline, and print inspection by the parent integrator. A successful parse or render checks syntax and presentation, not the completeness of business rules or the logical correctness of a process.
+Parse source HTML and CSS, check unique IDs and referenced labels, then build the selected document. The integrated catalog still needs desktop, narrow-screen, keyboard, offline, and print inspection by the parent integrator. Check actual text geometry as well as overflow: a page can fit the viewport while a note is split into grid cells, a short label leaves most of a callout empty, or fact rows and prose use inconsistent reading widths. Exercise short and long labels, inline code inside sentences, long code headings, and single-paragraph callouts. A successful parse or render checks syntax and presentation, not the completeness of business rules or the logical correctness of a process.

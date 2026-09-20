@@ -169,11 +169,21 @@ main > section > :last-child { margin-bottom: 0; }
 
 h2 { max-width: 36ch; font-size: clamp(1.5rem, 2.5cqi, 2rem); line-height: 1.08; letter-spacing: -0.045em; margin-bottom: 0.65rem; }
 
+/* Heading code is typography, not an inline data chip. */
+h2 code { padding: 0; border: 0; background: transparent; font-size: 0.88em; overflow-wrap: anywhere; }
+
 h3 { margin-bottom: 0.7rem; font-size: 1.25rem; line-height: 1.15; }
 
 .section-intro { max-width: 65ch; margin-bottom: 0px; font-size: 1.05rem; line-height: 1.5; }
 
-.definition { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.5rem; color: var(--paper); background: var(--ink); box-shadow: none; padding: 1.25rem; }
+.definition { max-width: 76ch; color: var(--paper); background: var(--ink); box-shadow: none; padding: 1.25rem; }
+
+/* A definition becomes two-column only when it has the supported signal list. */
+.definition:has(> .signal-list) { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.5rem; max-width: none; }
+
+.definition > :last-child { margin-bottom: 0; }
+
+.definition-label { margin-bottom: 0.4rem; color: rgb(176, 176, 176); font-family: "Courier New", Courier, monospace; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 
 .definition h2 { max-width: 36ch; color: var(--paper); }
 
@@ -251,9 +261,12 @@ figcaption { padding-top: 1rem; border-top: 1px solid var(--rule); font-size: 1r
 
 figcaption strong { margin-right: 0.35rem; }
 
-.note-strip { display: grid; grid-template-columns: minmax(9rem, 0.45fr) minmax(0, 1.55fr); gap: 1.5rem; border-left: 0.4rem solid var(--accent); background: var(--accent-soft); margin-top: 1rem; padding: 1rem; }
+.note-strip { max-width: 76ch; border-left: 0.4rem solid var(--accent); background: var(--accent-soft); margin-top: 1rem; padding: 1rem; }
 
-.note-strip strong { font-family: "Courier New", Courier, monospace; font-size: 0.78rem; text-transform: uppercase; }
+/* Only a separate label followed by one complete paragraph opts into columns. */
+.note-strip:has(> strong:first-child + p:last-child) { display: grid; grid-template-columns: minmax(9rem, 0.45fr) minmax(0, 1.55fr); gap: 1.5rem; }
+
+.note-strip strong { margin-right: 0.25em; font-family: "Courier New", Courier, monospace; font-size: 0.78rem; text-transform: uppercase; }
 
 .note-strip p { margin: 0px; }
 
@@ -319,7 +332,10 @@ figcaption strong { margin-right: 0.35rem; }
 
 .principle p:last-child { margin-bottom: 0px; color: var(--muted); }
 
-.takeaway { display: grid; grid-template-columns: minmax(8rem, 0.55fr) minmax(0, 1.45fr); gap: 1.5rem; align-items: start; border: 3px solid var(--line); box-shadow: var(--shadow); margin-top: 1rem; padding: 1.1rem; }
+.takeaway { max-width: 76ch; border: 3px solid var(--line); box-shadow: var(--shadow); margin-top: 1rem; padding: 1.1rem; }
+
+/* The labelled component retains its editorial split; plain conclusions use the full measure. */
+.takeaway:has(> .takeaway-label) { display: grid; grid-template-columns: minmax(8rem, 0.55fr) minmax(0, 1.45fr); gap: 1.5rem; align-items: start; }
 
 .takeaway-label { color: var(--teal); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 
@@ -348,7 +364,7 @@ figcaption strong { margin-right: 0.35rem; }
   .utility-row,
       .diagram-topline { align-items: flex-start; flex-direction: column; }
   .utility-row { gap: 0.55rem; }
-  .definition,
+  .definition:has(> .signal-list),
       .deep-dive-content,
       .footer-grid { grid-template-columns: 1fr; }
   .signal-list { padding: 1rem 0px 0px; border-left: 0px; border-top: 1px solid rgb(108, 108, 108); }
@@ -358,8 +374,8 @@ figcaption strong { margin-right: 0.35rem; }
   .connector-arrow { grid-column: 1; grid-row: 1; width: 2rem; height: 2rem; }
   .connector-arrow::before { top: 0px; bottom: 2px; left: 50%; right: auto; border-top: 0px; border-left: 2px solid; transform: translateX(-50%); }
   .connector-arrow::after { top: auto; bottom: 2px; left: 50%; right: auto; transform: translateX(-50%) rotate(135deg); }
-  .note-strip,
-      .takeaway { grid-template-columns: 1fr; gap: 0.7rem; }
+  .note-strip:has(> strong:first-child + p:last-child),
+      .takeaway:has(> .takeaway-label) { grid-template-columns: 1fr; gap: 0.7rem; }
   .steps,
       .principle-grid { grid-template-columns: 1fr; }
   .steps li + li { border-top: 1px solid var(--rule); border-left: 0px; }

@@ -3,6 +3,7 @@
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) minmax(0, 3fr);
   gap: 0;
+  max-width: 76ch;
   margin-block: 1rem;
   border-block: 1px solid var(--rule);
 }

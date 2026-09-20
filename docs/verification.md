@@ -4,6 +4,14 @@ Tracking: https://github.com/blockedby/explanatory-html-pages-skill/issues/1
 
 Verified on Linux x64 with Node 24.21.0. Builds use npm dependencies only: PlantUML TeaVM/Viz.js in Node, BPMN XML/DI preparation in Node, and embedded bpmn-js/DOMPurify in the reader. Neither Java nor Chromium is a build requirement. Chromium was used only as an optional development tool to test the ordinary reader-browser path. This is implementation acceptance, not proof of business correctness.
 
+## Natural-flow layout regression verification
+
+Fixed the catalog's empty definition column, fragmented inline note, boxed technical heading and mismatched fact/prose widths in canonical CSS. Natural-flow callouts remain compact; supported structured components keep responsive columns. A paragraph-only note explicitly stays in natural flow.
+
+Fresh `npm test` passed **45 tests** and `npm run test:browser` passed **11 scenarios**, with no failures or skips. The new geometry regression exercises 1920, 1440, 768 and 390px widths with sidebar open/closed states, inline text order, one-paragraph notes, short definitions, single-child takeaways, structured variants, heading wrapping and full-width data tables. Example/template builds, repository validation and `git diff --check` passed.
+
+Rebuilt `/home/kcnc/code/skills-overview/report.html` from unchanged source content. Independently checked the actual catalog at 1440 and 390px: no page overflow, HTTP requests or page errors; inline notes use block flow. Captured six section screenshots under `/tmp/catalog-fixed-*.png`; inspected desktop definition/verification sections and mobile verification section. These checks cover the reported rendered defects rather than treating absence of overflow alone as visual acceptance.
+
 ## DOM helper follow-up verification
 
 The private figure-construction helper preserves text-safe DOM insertion and the existing sanitized PlantUML SVG path. Fresh `npm test` passed **45 tests** and `npm run test:browser` passed **10 scenarios**, with zero failures or skips. The new EN/RU regression covers escaping, retained/downloaded source equality, serialization, IDs, accessibility, no-JS markup and caption position.
