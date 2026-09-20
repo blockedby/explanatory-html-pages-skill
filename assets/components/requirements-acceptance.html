@@ -1,0 +1,16 @@
+<section id="reservation-requirements">
+  <h2>Observable reservation requirements</h2>
+  <p>These are example acceptance criteria, not evidence that an implementation has passed them.</p>
+  <h3>REQ-01 · Never over-allocate an item</h3>
+  <p>Creation must atomically check available stock and reserve the requested quantity.</p>
+  <ol class="doc-criteria">
+    <li><strong>AC-01 · Concurrent requests</strong><p><strong>Given</strong> one available unit and no active holds, <strong>when</strong> two distinct requests each reserve one unit concurrently, <strong>then</strong> exactly one succeeds, the other returns <code>409 insufficient_stock</code>, and available stock becomes zero.</p></li>
+    <li><strong>AC-02 · Rejected quantity</strong><p><strong>Given</strong> one available unit, <strong>when</strong> a request reserves two units, <strong>then</strong> no hold or creation event is recorded and available stock remains one.</p></li>
+  </ol>
+  <h3>REQ-02 · A retry must not create a second hold</h3>
+  <p>For 24 hours after the first completed request, an identical request from the same client with the same idempotency key returns its stored outcome.</p>
+  <ol class="doc-criteria" start="3">
+    <li><strong>AC-03 · Lost response</strong><p><strong>Given</strong> a committed hold whose response was lost, <strong>when</strong> checkout repeats the same request and key, <strong>then</strong> the response contains the same reservation ID and stock is not reduced again.</p></li>
+    <li><strong>AC-04 · Reused key, changed payload</strong><p><strong>Given</strong> a completed request, <strong>when</strong> its key is reused with a different quantity within 24 hours, <strong>then</strong> the service returns <code>409 idempotency_conflict</code> and leaves the original hold unchanged.</p></li>
+  </ol>
+</section>

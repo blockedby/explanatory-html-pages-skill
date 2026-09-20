@@ -1,0 +1,15 @@
+<section id="reservation-native-flow">
+  <h2>Trace the creation request across four boundaries</h2>
+  <figure class="diagram" aria-labelledby="reservation-native-caption">
+    <div class="flow">
+      <div class="node node--dark"><div class="node-meta"><span class="node-index">01</span><span class="node-role">Caller</span></div><h3>Checkout</h3><p>Requests two units with a retry key.</p></div>
+      <div class="connector"><span class="connector-label">create hold</span><span class="connector-arrow" aria-hidden="true"></span></div>
+      <div class="node"><div class="node-meta"><span class="node-index">02</span><span class="node-role">Owner</span></div><h3>Inventory</h3><p>Validates the request and controls the transaction.</p></div>
+      <div class="connector"><span class="connector-label">atomic commit</span><span class="connector-arrow" aria-hidden="true"></span></div>
+      <div class="node"><div class="node-meta"><span class="node-index">03</span><span class="node-role">Storage</span></div><h3>Database</h3><p>Stores the hold and its outbox entry together.</p></div>
+      <div class="connector"><span class="connector-label">pending entry</span><span class="connector-arrow" aria-hidden="true"></span></div>
+      <div class="node"><div class="node-meta"><span class="node-index">04</span><span class="node-role">Delivery</span></div><h3>Publisher</h3><p>Reads the outbox and sends the creation event to the broker.</p></div>
+    </div>
+    <figcaption id="reservation-native-caption">Read left to right: checkout requests a hold; Inventory commits it; a publisher later reads the recorded event. The API response returns after commit, without waiting for publication. This simplified flow omits rejection and retry branches.</figcaption>
+  </figure>
+</section>

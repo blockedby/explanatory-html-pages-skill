@@ -1,0 +1,23 @@
+<section id="reservation-scope">
+  <h2>What stock reservation covers</h2>
+  <p>This example service holds stock while a customer completes checkout. A reservation is not a payment or a shipping instruction.</p>
+  <dl class="doc-facts">
+    <dt>Goal</dt><dd>Prevent two checkouts from claiming the same available unit.</dd>
+    <dt>Success signal</dt><dd>Concurrent requests never reduce available stock below zero; rejected requests identify the unavailable item.</dd>
+    <dt>In scope</dt><dd>Create a ten-minute hold, confirm it after payment authorization, and release it on cancellation or expiry.</dd>
+    <dt>Out of scope</dt><dd>Payment capture, warehouse picking, and replenishment forecasts.</dd>
+  </dl>
+  <h3>Actors and responsibility boundaries</h3>
+  <div class="doc-table-scroll" role="region" aria-label="Reservation actors" tabindex="0">
+    <table class="doc-table">
+      <caption>Who requests, decides, and observes</caption>
+      <thead><tr><th scope="col">Actor</th><th scope="col">Responsibility</th><th scope="col">Boundary</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Customer</th><td>Chooses quantity and completes checkout.</td><td>Cannot directly change stock balances.</td></tr>
+        <tr><th scope="row">Checkout service</th><td>Requests and confirms a hold using an authenticated service identity.</td><td>Does not calculate warehouse availability.</td></tr>
+        <tr><th scope="row">Inventory service</th><td>Atomically checks availability and owns reservation state.</td><td>Does not authorize payments.</td></tr>
+        <tr><th scope="row">Expiry worker</th><td>Releases active holds whose deadline has passed.</td><td>Must not release confirmed reservations.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>

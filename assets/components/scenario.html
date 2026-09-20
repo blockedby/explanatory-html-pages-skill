@@ -1,0 +1,26 @@
+<section id="reservation-scenario">
+  <h2>Reserve two units during checkout</h2>
+  <dl class="doc-facts">
+    <dt>Trigger</dt><dd>The customer proceeds from basket to payment.</dd>
+    <dt>Preconditions</dt><dd>The checkout service is authenticated; item SKU-42 exists; the requested quantity is two.</dd>
+    <dt>Success outcome</dt><dd>One active hold owns two units until confirmation, cancellation, or its ten-minute deadline.</dd>
+    <dt>Failure outcome</dt><dd>No partial hold is created. The checkout keeps the basket and explains the rejection.</dd>
+  </dl>
+  <div class="doc-scenario">
+    <h3>Main scenario</h3>
+    <ol>
+      <li>Checkout submits SKU-42, quantity 2, and a new idempotency key.</li>
+      <li>Inventory validates the request and checks stock inside the same transaction that creates the hold.</li>
+      <li>Inventory commits the hold and an outbox record for its creation event.</li>
+      <li>Inventory returns the reservation ID and expiry time. Checkout shows the payment step.</li>
+    </ol>
+  </div>
+  <div class="doc-alternatives">
+    <h3>Alternative paths</h3>
+    <dl class="doc-facts">
+      <dt>A1 · Step 2: insufficient stock</dt><dd>Inventory returns <code>409 insufficient_stock</code> without creating a hold. Checkout asks the customer to reduce the quantity; the scenario ends.</dd>
+      <dt>A2 · Step 4: response lost</dt><dd>Checkout repeats the identical request with the same key. Inventory returns the original result, not a second hold; resume at step 4.</dd>
+      <dt>A3 · Before payment: hold expires</dt><dd>Checkout requests a new hold before proceeding. If stock is no longer available, follow A1; the expired hold cannot be confirmed.</dd>
+    </dl>
+  </div>
+</section>

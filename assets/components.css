@@ -1,0 +1,57 @@
+/* Optional documentation components. Load after theme.css; no shell/layout rules. */
+.doc-facts {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(0, 3fr);
+  gap: 0;
+  margin-block: 1rem;
+  border-block: 1px solid var(--rule);
+}
+.doc-facts > dt,
+.doc-facts > dd { margin: 0; padding: 0.65rem 0.75rem; overflow-wrap: anywhere; }
+.doc-facts > dt { font-weight: 700; background: var(--wash); }
+.doc-facts > dt ~ dt,
+.doc-facts > dd ~ dd { border-top: 1px solid var(--rule); }
+
+.doc-scenario { margin-block: 1rem; padding-inline-start: 1rem; border-inline-start: 3px solid var(--line); }
+.doc-scenario > ol { padding-inline-start: 1.5rem; }
+.doc-scenario li + li { margin-top: 0.5rem; }
+.doc-alternatives { margin-block: 1rem; padding: 1rem; background: var(--wash); }
+.doc-alternatives > :last-child { margin-bottom: 0; }
+
+.doc-table-scroll { max-width: 100%; margin-block: 1rem; overflow-x: auto; }
+.doc-table-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.doc-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; line-height: 1.5; }
+.doc-table caption { padding-block: 0 0.6rem; text-align: start; font-weight: 700; }
+.doc-table th,
+.doc-table td { padding: 0.65rem 0.75rem; border: 1px solid var(--rule); text-align: start; vertical-align: top; overflow-wrap: anywhere; }
+.doc-table thead th { background: var(--wash); color: var(--ink); }
+.doc-table tbody th { font-weight: 700; }
+.doc-table td > :last-child { margin-bottom: 0; }
+
+.doc-criteria { padding-inline-start: 1.5rem; }
+.doc-criteria > li { margin-block: 0.75rem; padding-inline-start: 0.25rem; }
+.doc-criteria p { margin-block: 0.25rem 0; }
+.doc-payload { max-width: 100%; padding: 1rem; border: 1px solid var(--rule); background: var(--wash); white-space: pre-wrap; overflow-wrap: anywhere; }
+.doc-payload > code { padding: 0; border: 0; background: transparent; color: inherit; }
+.doc-change { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-block: 1rem; }
+.doc-change > div { min-width: 0; padding: 1rem; border: 1px solid var(--rule); }
+.doc-change h3 { padding-bottom: 0.5rem; border-bottom: 2px solid var(--line); }
+.doc-change > div > :last-child { margin-bottom: 0; }
+
+@media (max-width: 40rem) {
+  .doc-facts { grid-template-columns: minmax(0, 1fr); }
+  .doc-facts > dd ~ dd { border-top: 0; }
+  .doc-facts > dt { padding-bottom: 0.35rem; }
+  .doc-facts > dd { padding-top: 0.35rem; }
+  .doc-change { grid-template-columns: minmax(0, 1fr); }
+  .doc-table th,
+  .doc-table td { padding: 0.5rem; }
+}
+@media print {
+  .doc-table-scroll { overflow: visible; }
+  .doc-table { font-size: 9pt; }
+  .doc-table thead { display: table-header-group; }
+  .doc-table tr { break-inside: avoid; }
+  .doc-payload { white-space: pre-wrap; }
+  .doc-change { grid-template-columns: minmax(0, 1fr); }
+}

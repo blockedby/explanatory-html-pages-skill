@@ -1,0 +1,17 @@
+<section id="reservation-mapping">
+  <h2>Map checkout input to an inventory reservation</h2>
+  <p>The adapter accepts a single basket line per request. It validates the line before calling Inventory; it does not silently round quantities or substitute another item.</p>
+  <div class="doc-table-scroll" role="region" aria-label="Checkout to inventory field mapping" tabindex="0">
+    <table class="doc-table">
+      <caption>Source → target transformations and failure behavior</caption>
+      <thead><tr><th scope="col">Checkout source</th><th scope="col">Inventory target</th><th scope="col">Transformation</th><th scope="col">Missing or invalid input</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>line.productCode</code></th><td><code>sku</code></td><td>Copy unchanged, including case.</td><td>Reject an empty value; never trim into a different SKU.</td></tr>
+        <tr><th scope="row"><code>line.units</code></th><td><code>quantity</code></td><td>Accept an integer from 1 through 100.</td><td>Reject strings, fractions, zero, and negative numbers.</td></tr>
+        <tr><th scope="row"><code>attempt.id</code></th><td><code>Idempotency-Key</code> header</td><td>Reuse the attempt ID for retries of this exact line and quantity.</td><td>Stop if absent. A changed basket starts a new attempt.</td></tr>
+        <tr><th scope="row">Service identity</th><td>Owning client</td><td>Inventory derives ownership from the access token.</td><td>Reject unauthenticated requests and any caller-supplied ownership field.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Worked example:</strong> <code>{"productCode":"SKU-42","units":2}</code> becomes <code>{"sku":"SKU-42","quantity":2}</code>. The attempt ID belongs in the header, not the JSON body.</p>
+</section>
