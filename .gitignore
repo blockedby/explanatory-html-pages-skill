@@ -18,3 +18,7 @@ __pycache__/
 build/
 dist/
 preview/
+
+# Local document-build dependencies and rendering runtimes
+node_modules/
+.tools/
