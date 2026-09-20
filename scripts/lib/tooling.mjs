@@ -15,7 +15,7 @@ export async function doctor() {
   const checks = [];
   const [major, minor] = process.versions.node.split('.').map(Number);
   checks.push({ tool: 'Node', ok: major > 22 || (major === 22 && minor >= 12), version: process.versions.node });
-  for (const name of ['parse5', 'jsdom', 'dompurify', 'bpmn-js', 'bpmn-auto-layout', 'playwright', 'esbuild']) {
+  for (const name of ['parse5', 'jsdom', 'dompurify', 'bpmn-js', 'bpmn-moddle', 'bpmn-auto-layout', 'playwright', 'esbuild']) {
     try { require.resolve(name); checks.push({ tool: name, ok: true }); }
     catch { checks.push({ tool: name, ok: false, fix: 'Run node scripts/setup.mjs --npm' }); }
   }
@@ -29,9 +29,12 @@ export async function doctor() {
   catch { checks.push({ tool: 'PlantUML jar', ok: false, fix: 'Run node scripts/setup.mjs --plantuml or set PLANTUML_JAR.' }); }
   const browserRoot = process.env.PLAYWRIGHT_BROWSERS_PATH || path.join(toolkitRoot, '.tools/ms-playwright');
   try {
-    const entries = await readdir(browserRoot);
-    if (!entries.some(name => /^chromium[-_]/.test(name))) throw new Error('No Chromium');
-    checks.push({ tool: 'Playwright Chromium cache', ok: true, path: browserRoot });
+    if (process.env.BPMN_CHROMIUM_EXECUTABLE) await access(process.env.BPMN_CHROMIUM_EXECUTABLE, constants.X_OK);
+    else {
+      const entries = await readdir(browserRoot);
+      if (!entries.some(name => /^chromium[-_]/.test(name))) throw new Error('No Chromium');
+    }
+    checks.push({ tool: 'Playwright Chromium cache', ok: true, path: process.env.BPMN_CHROMIUM_EXECUTABLE || browserRoot });
   } catch { checks.push({ tool: 'Playwright Chromium cache', ok: false, fix: 'Run node scripts/setup.mjs --browser.' }); }
   return { ready: checks.every(check => check.ok), checks, note: 'No downloads performed. Doctor checks installation; rendering tests verify operation. Java is unnecessary for documents without PlantUML.' };
 }
