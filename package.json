@@ -4,6 +4,14 @@
   "private": true,
   "type": "module",
   "description": "Local build-time tooling for standalone documentation pages",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/document.mjs doctor",
+    "build:examples": "node scripts/build-examples.mjs",
+    "test": "node --test tests/core.test.mjs tests/build.test.mjs tests/svg.test.mjs tests/plantuml.test.mjs tests/bpmn.test.mjs",
+    "test:browser": "node --test tests/browser.test.mjs",
+    "validate": "python3 scripts/validate.py"
+  },
   "engines": {
     "node": ">=22.12.0"
   },
