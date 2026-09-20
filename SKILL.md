@@ -41,10 +41,13 @@ Choose only the sections that answer the reader's next questions. Useful pattern
 
 Use progressive disclosure by default: orient the reader first, define the core idea, show the main model, unpack the mechanism, then reveal edge cases or deeper detail. Do not force a fixed page schema or add empty sections.
 
+Match depth to the reader's question, not to the reference page's length. The reference is a short layout demo, not a target for how much to explain. For a substantive walkthrough, explain how and why the mechanism works, ground it in a concrete example, and cover the relevant trade-offs, failure cases, or boundaries of the model. Use available context; do not invent facts or add filler to meet a word count. Keep paragraphs focused, but do not replace the explanation with a few headings and one-line cards. The concise-handoff requirement applies to the delivery message, not to the HTML page.
+
 ### 3. Compose the page
 
 - Use a single `h1`, meaningful heading order, and semantic landmarks such as `header`, `nav`, `main`, `section`, `figure`, `figcaption`, lists, and tables where they match the content.
 - Write in plain language. Define necessary technical terms, keep one main idea per paragraph, and explain cause and effect directly. Use realistic copy, not authoring tokens or generic filler.
+- Treat audience and teaching approach as authoring context, not a visible metadata panel. Do not add an “At a glance” block with audience, estimated read time, or model labels unless the user explicitly requests it. Open with the title and a useful introduction instead.
 - Keep meaningful diagram text in the document. Give nodes concrete names and short role labels. Make the meaning and direction of every arrow clear in visible text or a caption; do not rely on color alone.
 - Prefer readable HTML and CSS diagrams to flattened images. On narrow screens, recompose flows vertically and preserve the logical reading order rather than hiding overflow.
 - Use inline CSS and a restrained editorial system by default: strong ink-and-paper contrast, a purposeful accent, consistent spacing, readable line lengths, visible focus, and print treatment when the page may be saved or shared.
@@ -52,6 +55,8 @@ Use progressive disclosure by default: orient the reader first, define the core 
 - Remove unused sections and any unresolved sample markers before handoff. A finished page must stand on its own.
 
 The included `assets/explanatory-page-template.html` is a complete, dependency-free reference and reusable layout shell. Copy the file, keep its navigation CSS/markup and inline script, and replace the content inside `.reading-pane` (marked `PAGE CONTENT`). Update the title, metadata, language, and navigation links to match the new content. Its teaching sections are examples, not a required schema.
+
+The template's `layout-compact` body class reduces heading sizes, section gaps, and block padding without removing content or shrinking body text. Remove that class for the roomier version. Compactness is a layout choice, not a reason to shorten the explanation; preserve readable line lengths and mobile touch targets.
 
 For pages with multiple topics, use this navigation by default:
 

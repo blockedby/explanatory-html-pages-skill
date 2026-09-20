@@ -32,6 +32,8 @@ The skill does not require web research, a browser run, a framework, a build ste
 3. Give each topic a unique section `id` and update the links in `#topic-links` to match. Keep `#main-content` for the skip link.
 4. Update `<html lang>`, title, description, and navigation labels for your audience. Keep only the teaching sections you need; the layout does not prescribe the explanation.
 
+The demo enables a compact layout with `<body class="layout-compact">`: smaller display headings, tighter section spacing and block padding, and a slightly narrower sidebar. Body copy and content are not reduced. Remove `layout-compact` to compare with the roomier version; no script changes are needed. The short sample demonstrates layout, not the expected depth of a finished explanation.
+
 The script handles responsive defaults, Escape, mobile focus transfer, and current-section indication. There are no dependencies or build steps. Open the HTML file directly, or preview locally:
 
 ```sh

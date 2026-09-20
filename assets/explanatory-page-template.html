@@ -41,7 +41,18 @@
       text-rendering: optimizeLegibility;
     }
 
-    ::selection { color: var(--paper); background: var(--ink); }
+    ::selection { color: var(--paper); background: var(--ink); text-shadow: none; }
+
+    /* Invert selection on dark surfaces so the selected range stays visible. */
+    .definition::selection,
+    .definition ::selection,
+    .node--dark::selection,
+    .node--dark ::selection,
+    .boundary-table th::selection,
+    .boundary-table th ::selection {
+      color: var(--ink);
+      background: #e8e8e8;
+    }
 
     a {
       color: inherit;
@@ -60,7 +71,6 @@
 
     code,
     .eyebrow,
-    .issue,
     .section-kicker,
     .node-role,
     .node-index,
@@ -127,8 +137,7 @@
       border-bottom: 1px solid var(--rule);
     }
 
-    .eyebrow,
-    .issue {
+    .eyebrow {
       margin: 0;
       font-size: 0.73rem;
       font-weight: 700;
@@ -149,13 +158,7 @@
       background: var(--accent);
     }
 
-    .issue { color: var(--muted); }
-
     .masthead-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.65fr);
-      gap: clamp(2.5rem, 8vw, 8rem);
-      align-items: end;
       padding: clamp(3.5rem, 9vw, 7.5rem) 0 clamp(3rem, 7vw, 5.5rem);
     }
 
@@ -177,48 +180,6 @@
       margin-bottom: 0;
       font-size: clamp(1.18rem, 2vw, 1.55rem);
       line-height: 1.45;
-    }
-
-    .orientation {
-      padding-left: clamp(1.25rem, 3vw, 2rem);
-      border-left: 2px solid var(--line);
-    }
-
-    .orientation h2 {
-      margin-bottom: 1.25rem;
-      font-family: "Courier New", Courier, monospace;
-      font-size: 0.75rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .metadata {
-      margin-bottom: 1.5rem;
-    }
-
-    .metadata > div {
-      display: grid;
-      grid-template-columns: minmax(5rem, 0.75fr) minmax(0, 1.25fr);
-      gap: 0.75rem;
-      padding: 0.65rem 0;
-      border-top: 1px solid var(--rule);
-    }
-
-    .metadata dt {
-      color: var(--muted);
-      font-family: "Courier New", Courier, monospace;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-    }
-
-    .metadata dd { margin: 0; font-weight: 700; }
-
-    .orientation-note {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.9rem;
     }
 
     /* Reusable navigation shell: keep with the details element and script. */
@@ -420,24 +381,10 @@
       line-height: 1.5;
     }
 
-    .definition-grid {
-      display: grid;
-      grid-template-columns: minmax(10rem, 0.7fr) minmax(0, 1.3fr);
-      gap: clamp(2rem, 7vw, 7rem);
-      align-items: start;
-    }
-
-    .display-word {
-      margin: 0;
-      color: var(--accent);
-      font-size: clamp(4rem, 10vw, 9rem);
-      font-weight: 800;
-      line-height: 0.78;
-      letter-spacing: -0.1em;
-      overflow-wrap: anywhere;
-    }
-
     .definition {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+      gap: 1.5rem;
       padding: clamp(1.5rem, 4vw, 3rem);
       color: var(--paper);
       background: var(--ink);
@@ -467,16 +414,20 @@
 
     .signal-list {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: 1fr;
+      align-content: start;
       margin: 0;
-      border-top: 1px solid #6c6c6c;
+      padding-left: 1.25rem;
+      border-left: 1px solid #6c6c6c;
     }
 
     .signal-list > div {
-      padding: 1rem 0.85rem 0 0;
+      padding: 0.6rem 0;
     }
 
-    .signal-list > div + div { border-left: 1px solid #6c6c6c; padding-left: 0.85rem; }
+    .signal-list > div:first-child { padding-top: 0; }
+    .signal-list > div:last-child { padding-bottom: 0; }
+    .signal-list > div + div { border-top: 1px solid #6c6c6c; }
 
     .signal-list dt {
       margin-bottom: 0.3rem;
@@ -621,25 +572,35 @@
       text-transform: uppercase;
     }
 
+    /* One continuous shaft and geometric head, independent of font metrics. */
     .connector-arrow {
-      display: flex;
-      align-items: center;
+      position: relative;
+      display: block;
       width: 100%;
+      height: 0.75rem;
       color: var(--accent);
     }
 
     .connector-arrow::before {
-      flex: 1;
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 2px;
       content: "";
       border-top: 2px solid currentColor;
+      transform: translateY(-50%);
     }
 
     .connector-arrow::after {
-      content: "→";
-      font-family: "Courier New", Courier, monospace;
-      font-size: 1.55rem;
-      font-weight: 700;
-      line-height: 1;
+      position: absolute;
+      top: 50%;
+      right: 2px;
+      width: 8px;
+      height: 8px;
+      content: "";
+      border-top: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+      transform: translateY(-50%) rotate(45deg);
     }
 
     figcaption {
@@ -858,6 +819,76 @@
 
     .footer-grid p:last-child { margin: 0; }
 
+    /* Optional density preset. Remove layout-compact from body for the roomy version. */
+    @media screen {
+      .layout-compact .site-header { padding-top: 0.85rem; }
+      .layout-compact .utility-row { padding-bottom: 0.65rem; }
+      .layout-compact .masthead-grid { padding-block: 1.25rem; }
+      .layout-compact h1 {
+        max-width: 32ch;
+        margin-bottom: 0.65rem;
+        font-size: clamp(2rem, 3.5cqi, 2.75rem);
+        line-height: 1.1;
+        letter-spacing: -0.045em;
+      }
+      .layout-compact .lead { max-width: 76ch; font-size: 1rem; line-height: 1.5; }
+      .layout-compact main section { padding-block: 1.5rem; }
+      .layout-compact .section-kicker { margin-bottom: 0.75rem; }
+      .layout-compact .section-number { width: 1.6rem; height: 1.6rem; }
+      .layout-compact main h2 {
+        max-width: 36ch;
+        margin-bottom: 0.65rem;
+        font-size: clamp(1.5rem, 2.5cqi, 2rem);
+        line-height: 1.08;
+        letter-spacing: -0.045em;
+      }
+      .layout-compact .section-intro { max-width: 65ch; font-size: 1.05rem; }
+      .layout-compact .definition { padding: 1.25rem; box-shadow: none; }
+      .layout-compact .definition .important { font-size: 1.05rem; margin-bottom: 0.65rem; }
+      .layout-compact .definition-detail { margin-bottom: 0; }
+      .layout-compact .diagram,
+      .layout-compact .steps,
+      .layout-compact .table-frame,
+      .layout-compact .principle-grid,
+      .layout-compact .takeaway { margin-top: 1rem; }
+      .layout-compact .diagram { padding: 1rem; }
+      .layout-compact .diagram-topline { padding-bottom: 0.75rem; }
+      .layout-compact .flow { padding-block: 1.25rem; }
+      .layout-compact .node { padding: 1rem; }
+      .layout-compact .node-meta { margin-bottom: 1.25rem; }
+      .layout-compact .node h3 { font-size: 1.15rem; }
+      .layout-compact .note-strip { margin-top: 1rem; padding: 1rem; }
+      .layout-compact .steps li { padding: 0.85rem 1rem; }
+      .layout-compact .step-top { margin-bottom: 0.55rem; }
+      .layout-compact .step-index { font-size: 1rem; }
+      .layout-compact .steps h3 { margin-bottom: 0.45rem; font-size: 1.05rem; }
+      .layout-compact .deep-dive { margin-top: 1rem; }
+      .layout-compact .deep-dive summary { padding: 0.8rem 1rem; }
+      .layout-compact .deep-dive-content { padding: 1rem; gap: 1rem; }
+      .layout-compact .boundary-table th,
+      .layout-compact .boundary-table td { padding: 0.75rem; }
+      .layout-compact .principle {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-content: start;
+        align-items: baseline;
+        gap: 0.55rem 0.65rem;
+        padding: 0.85rem 1rem;
+      }
+      .layout-compact .principle-index { margin: 0; font-size: 0.85rem; }
+      .layout-compact .principle h3 { margin: 0; font-size: 1.05rem; }
+      .layout-compact .principle p { grid-column: 1 / -1; }
+      .layout-compact .takeaway { padding: 1.1rem; }
+      .layout-compact .takeaway p { font-size: 1.1rem; }
+      .layout-compact .site-footer { padding-block: 1.5rem 2rem; }
+      .layout-compact .toc ul { gap: 0.15rem; }
+      .layout-compact .toc a { min-height: 2.75rem; padding-block: 0.55rem; }
+    }
+    @media screen and (min-width: 80rem) {
+      .layout-compact:has(.topic-panel[open]) { padding-left: 15.5rem; }
+      .layout-compact .topic-panel[open] { width: 15.5rem; }
+    }
+
     @container (max-width: 900px) {
       .flow {
         grid-template-columns: minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr);
@@ -877,16 +908,11 @@
       .diagram-topline { align-items: flex-start; flex-direction: column; }
       .utility-row { gap: 0.55rem; }
 
-      .masthead-grid,
-      .definition-grid,
+      .definition,
       .deep-dive-content,
       .footer-grid { grid-template-columns: 1fr; }
 
-      .masthead-grid { gap: 3rem; }
-      .orientation { padding-left: 1rem; }
-      .display-word { font-size: clamp(3.7rem, 20vw, 6.5rem); }
-      .signal-list { grid-template-columns: 1fr; }
-      .signal-list > div + div { padding-left: 0; border-top: 1px solid #6c6c6c; border-left: 0; }
+      .signal-list { padding: 1rem 0 0; border-left: 0; border-top: 1px solid #6c6c6c; }
 
       .flow { grid-template-columns: 1fr; gap: 0.5rem; padding: 1.5rem 0; }
 
@@ -906,11 +932,24 @@
         grid-row: 1;
         width: 2rem;
         height: 2rem;
-        flex-direction: column;
       }
 
-      .connector-arrow::before { width: 0; height: 1.15rem; border-top: 0; border-left: 2px solid currentColor; }
-      .connector-arrow::after { content: "↓"; }
+      .connector-arrow::before {
+        top: 0;
+        bottom: 2px;
+        left: 50%;
+        right: auto;
+        border-top: 0;
+        border-left: 2px solid currentColor;
+        transform: translateX(-50%);
+      }
+      .connector-arrow::after {
+        top: auto;
+        bottom: 2px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%) rotate(135deg);
+      }
 
       .note-strip,
       .takeaway { grid-template-columns: 1fr; gap: 0.7rem; }
@@ -988,7 +1027,7 @@
     }
   </style>
 </head>
-<body>
+<body class="layout-compact">
   <a class="skip-link" href="#main-content">Skip to content</a>
 
   <!-- REUSABLE SHELL: edit these links to match your section IDs. -->
@@ -1020,24 +1059,14 @@
     <div class="page">
       <div class="utility-row">
         <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span>Systems / explanatory guide</p>
-        <p class="issue">One request, four boundaries</p>
       </div>
 
       <div class="masthead-grid">
         <div>
-          <h1>A web request,<br><em>made visible.</em></h1>
+          <h1>A web request, <em>made visible.</em></h1>
           <p class="lead">Follow one message from a browser to the data that powers a response. The goal is a useful mental model, not a tour of every production detail.</p>
         </div>
 
-        <aside class="orientation" aria-labelledby="orientation-title">
-          <h2 id="orientation-title">At a glance</h2>
-          <dl class="metadata">
-            <div><dt>Audience</dt><dd>New to web systems</dd></div>
-            <div><dt>Read time</dt><dd>About 4 minutes</dd></div>
-            <div><dt>Model</dt><dd>One request, outward</dd></div>
-          </dl>
-          <p class="orientation-note">Read top to bottom once. Then use the map as a reference when a service feels more complicated than it should.</p>
-        </aside>
       </div>
 
 
@@ -1048,18 +1077,17 @@
     <section id="meaning" aria-labelledby="meaning-title">
       <div class="page">
         <div class="section-kicker"><span class="section-number" aria-hidden="true">01</span><span>Start with one message</span></div>
-        <div class="definition-grid">
-          <p class="display-word" aria-hidden="true">Request</p>
-          <div class="definition">
+        <div class="definition">
+          <div class="definition-copy">
             <h2 id="meaning-title">What is a web request?</h2>
             <p class="important">A web request is a message that asks another computer to do something or return something.</p>
             <p class="definition-detail">A browser creates the message. The message names a destination and an action, such as reading an order or saving a profile change. A response comes back with a result and enough information for the browser to show what happened.</p>
-            <dl class="signal-list">
-              <div><dt>Input</dt><dd>Method, destination, and optional data.</dd></div>
-              <div><dt>Work</dt><dd>Routing, rules, and state access.</dd></div>
-              <div><dt>Output</dt><dd>A status, result, and response data.</dd></div>
-            </dl>
           </div>
+          <dl class="signal-list">
+            <div><dt>Input</dt><dd>Method, destination, and optional data.</dd></div>
+            <div><dt>Work</dt><dd>Routing, rules, and state access.</dd></div>
+            <div><dt>Output</dt><dd>A status, result, and response data.</dd></div>
+          </dl>
         </div>
       </div>
     </section>
