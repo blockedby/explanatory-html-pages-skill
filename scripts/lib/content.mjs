@@ -2,7 +2,7 @@ import { JSDOM } from 'jsdom';
 import { parseFragment } from 'parse5';
 
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const tags = new Set('p h2 h3 h4 h5 h6 section article aside div span dl dt dd ul ol li table caption thead tbody tfoot tr th td code pre strong em b i small mark blockquote figure figcaption details summary a br hr time abbr sup sub s del ins kbd samp var'.split(' '));
+const tags = new Set('p h2 h3 h4 h5 h6 section article aside div span dl dt dd ul ol li table caption thead tbody tfoot tr th td code pre strong em b i small mark blockquote figure figcaption img details summary a br hr time abbr sup sub s del ins kbd samp var'.split(' '));
 const reserved = new Set(['main-content', 'topic-panel', 'topic-links']);
 const safeId = /^[\p{L}_][\p{L}\p{N}_.:-]*$/u;
 
@@ -18,9 +18,15 @@ export function parseContent(source) {
   for (const element of document.body.querySelectorAll('*')) {
     if (!tags.has(element.localName)) throw new Error(`Unsupported <${element.localName}> in content. Reuse components; the builder owns styles, scripts and the page shell.`);
     for (const { name, value } of [...element.attributes]) {
-      if (/^on/i.test(name) || ['style', 'src', 'srcset', 'srcdoc', 'formaction', 'action', 'background', 'xmlns'].includes(name)) throw new Error(`Unsupported content attribute: ${name}`);
+      if (/^on/i.test(name) || ['style', 'srcset', 'srcdoc', 'formaction', 'action', 'background', 'xmlns'].includes(name) || (name === 'src' && element.localName !== 'img')) throw new Error(`Unsupported content attribute: ${name}`);
+      if (element.localName === 'img' && !['src', 'alt', 'id', 'class', 'title'].includes(name)) throw new Error(`Unsupported image attribute: ${name}`);
       if (name === 'href' && !/^(?:#|https?:\/\/|mailto:)/i.test(value)) throw new Error('Content links must be anchors, HTTPS/HTTP, or mailto links.');
       if (name === 'target' && value === '_blank') element.setAttribute('rel', 'noopener noreferrer');
+    }
+    if (element.localName === 'img') {
+      const src = element.getAttribute('src');
+      if (!src?.trim() || /^[\/\\]|^[a-z][a-z0-9+.-]*:|[?#\u0000-\u001f\u007f]/i.test(src) || src !== src.trim()) throw new Error('Image src must be a local relative file path, not a URL.');
+      if (!element.hasAttribute('alt')) throw new Error('Every image needs an alt attribute; use empty alt only for decorative images.');
     }
     if (element.hasAttribute('id')) {
       if (!safeId.test(element.id) || ids.has(element.id)) throw new Error(`Invalid, duplicate or reserved ID: ${element.id}`);

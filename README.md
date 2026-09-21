@@ -27,13 +27,13 @@ Then create a source directory and build:
 node /path/to/skill/scripts/document.mjs create ./order-guide \
   --title 'How order acceptance works' --lang en --preset integration
 
-# Edit order-guide/content.html, document.json, and diagrams/*.puml or *.bpmn.
+# Edit order-guide/content.html and document.json; edit diagrams/ and optionally add local files under images/.
 
 node /path/to/skill/scripts/document.mjs build ./order-guide \
   --out ./order-guide/report.html
 ```
 
-Open `report.html` directly in an ordinary browser. Theme, navigation, PlantUML SVG, BPMN sources and its browser renderer are embedded—no server, extra installation, CDN or internet connection. BPMN appears after local JavaScript rendering; without JavaScript its source and an explanatory fallback remain available. Wait for diagrams before printing. Editable sources are downloadable from the document.
+Open `report.html` directly in an ordinary browser. The theme, navigation, PlantUML SVG, BPMN sources, browser renderer and supported local raster images are embedded—reading needs no server, extra installation, CDN or network access. BPMN appears after local JavaScript rendering; without JavaScript its source and an explanatory fallback remain available. Wait for diagrams before printing. Diagram sources are downloadable from the document; keep the source directory for editable image files.
 
 - Presets: `explainer`, `process`, `integration`.
 - Shell languages: English and Russian; content and labels are authored normally.
@@ -47,11 +47,11 @@ Open `report.html` directly in an ordinary browser. Theme, navigation, PlantUML 
 | `assets/theme.css`, `assets/navigation.js` | Compact monochrome typography, layout, collapsible desktop topics, mobile disclosure, keyboard/focus, reduced motion and print |
 | `assets/components.css`, `assets/components/` | Definitions, steps, comparisons, notes, scenarios, scope, actors, rules, requirements, contracts, mappings and analysis tables |
 | `assets/starters/` | Plain semantic HTML and editable diagram sources; no bespoke document DSL |
-| `scripts/document.mjs` | Scaffold, validation, generated navigation and atomic standalone build |
+| `scripts/document.mjs` | Scaffold, validation, local image embedding, generated navigation and atomic standalone build |
 | `scripts/renderers/` | Local PlantUML rendering, browser-free BPMN preparation and safe SVG embedding |
 | `assets/bpmn-runtime.js` | Offline reader-browser BPMN rendering, SVG isolation and loading/error states |
 
-Compact presentation does not mean shallow explanation. Components are choices, not a checklist that every document must contain. The skill chooses a useful structure and notation without compulsory interviews or approval gates.
+Compact presentation does not mean shallow explanation. Components and local images are choices, not a checklist that every document must contain. The skill chooses a useful structure and notation without compulsory interviews or approval gates.
 
 ## Complete examples
 
@@ -74,7 +74,7 @@ PlantUML uses the official TeaVM JavaScript engine plus Viz.js WASM in Node work
 
 ## Authoring references
 
-- [Authoring contract and workflow](references/authoring.md)
+- [Authoring contract and workflow, including local raster images](references/authoring.md)
 - [Component selection and snippets](references/components.md)
 - [Notation selection](references/notations.md)
 - [Local rendering, security and limitations](references/rendering.md)
