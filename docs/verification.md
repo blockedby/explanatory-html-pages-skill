@@ -4,6 +4,12 @@ Tracking: https://github.com/blockedby/explanatory-html-pages-skill/issues/1
 
 Verified on Linux x64 with Node 24.21.0. Builds use npm dependencies only: PlantUML TeaVM/Viz.js in Node, BPMN XML/DI preparation in Node, and embedded bpmn-js/DOMPurify in the reader. Neither Java nor Chromium is a build requirement. Chromium was used only as an optional development tool to test the ordinary reader-browser path. This is implementation acceptance, not proof of business correctness.
 
+## Sequence lifeline rendering follow-up
+
+The TeaVM engine emitted lifeline geometry without a stroke, leaving sequence participants visually disconnected. A renderer-owned PlantUML style now explicitly supplies the dashed dark stroke; note backgrounds are explicitly neutral instead of the engine's yellow default. Authored style overrides remain prohibited, and sanitizer/worker/network controls are unchanged.
+
+Worker full-suite verification passed 46 tests. Parent freshly ran `node --test tests/plantuml.test.mjs tests/svg.test.mjs`: **22 passed**, none failed or skipped. The new regression checks lifeline geometry and explicit paint both before and after SVG sanitation, plus monochrome note fill. Generated document refresh is verified separately with the spacing changes below.
+
 ## Shared section-width follow-up
 
 Removed independent prose/callout width caps: the bounded responsive `.page` now owns the common canvas for prose, lists, fact blocks, tables and diagrams. This supersedes the separate 76ch fact/callout measure in the preceding natural-flow fix; inline-flow safety remains unchanged.

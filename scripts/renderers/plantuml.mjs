@@ -19,7 +19,19 @@ skinparam LineColor #333333
 skinparam defaultFontColor #222222
 skinparam sequenceMessageAlign center
 skinparam sequenceParticipantBackgroundColor #EEEEEE
+skinparam noteBackgroundColor #EEEEEE
 skinparam actorBackgroundColor #EEEEEE
+' The TeaVM SVG backend omits its default lifeline stroke instead of
+' serializing it. A renderer-owned style makes that inherited default explicit.
+<style>
+sequenceDiagram {
+  lifeLine {
+    LineColor #333333
+    LineThickness 1
+    LineStyle 2
+  }
+}
+</style>
 hide circle
 hide footbox`;
 

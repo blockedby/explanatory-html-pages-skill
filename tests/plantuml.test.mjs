@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { Worker } from 'node:worker_threads';
 import { JSDOM } from 'jsdom';
 import { renderPlantUml } from '../scripts/renderers/plantuml.mjs';
+import { prepareSvg } from '../scripts/renderers/svg.mjs';
 
 const simple = '@startuml\nAlice -> Bob: Hello\n@enduml';
 const cases = {
@@ -42,6 +43,28 @@ for (const [name, labels] of Object.entries(cases)) {
     } finally { dom.window.close(); }
   });
 }
+
+test('sequence lifelines and monochrome notes have explicit visible paint', async () => {
+  const source = '@startuml\nparticipant Alice\nparticipant Bob\nAlice -> Bob: Hello\nnote over Alice,Bob: Note\n@enduml';
+  const raw = (await renderPlantUml(source)).svg;
+  const prepared = prepareSvg(raw, { prefix: 'sequence-paint', title: 'Sequence paint' });
+
+  for (const [phase, svg] of [['raw engine output', raw], ['prepared SVG', prepared]]) {
+    const dom = new JSDOM(svg, { contentType: 'image/svg+xml' });
+    try {
+      const lifelines = [...dom.window.document.querySelectorAll('g > rect[fill-opacity="0"] + line')];
+      assert.equal(lifelines.length, 2, `${phase}: expected both participant lifelines`);
+      for (const line of lifelines) {
+        assert.equal(line.style.stroke, 'rgb(51, 51, 51)', `${phase}: lifeline needs an explicit stroke`);
+        assert.equal(line.style.strokeWidth, '1', `${phase}: lifeline needs visible width`);
+        assert.equal(line.style.strokeDasharray, '2,2', `${phase}: lifeline needs sequence styling`);
+        assert.ok(Number(line.getAttribute('y2')) > Number(line.getAttribute('y1')), `${phase}: lifeline needs vertical geometry`);
+      }
+      const notePaths = [...dom.window.document.querySelectorAll('path[fill="#EEE"]')];
+      assert.ok(notePaths.length >= 2, `${phase}: note must use the monochrome fill`);
+    } finally { dom.window.close(); }
+  }
+});
 
 test('real syntax failure is rejected, never returned as an error SVG', async () => {
   await assert.rejects(renderPlantUml('@startuml\nAlice -> Bob\nthis is invalid syntax\n@enduml'), /rendering failed.*syntax check.*Syntax Error/i);
