@@ -9,7 +9,7 @@ export function inside(root, target) {
   return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
 }
 export async function sourceFile(root, relative, { maxBytes = 2 * 1024 * 1024 } = {}) {
-  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) throw new Error('Source byte limit must be a positive safe integer.');
+  if (maxBytes !== null && (!Number.isSafeInteger(maxBytes) || maxBytes <= 0)) throw new Error('Source byte limit must be a positive safe integer or null.');
   if (typeof relative !== 'string' || !relative || path.isAbsolute(relative) || relative.includes('\0')) throw new Error('Source path must be a nonempty relative path.');
   const base = await realpath(root);
   const candidate = path.resolve(base, relative);
@@ -18,7 +18,7 @@ export async function sourceFile(root, relative, { maxBytes = 2 * 1024 * 1024 } 
   if (!inside(base, actual)) throw new Error(`Source symlink escapes document directory: ${relative}`);
   const stat = await lstat(actual);
   if (!stat.isFile()) throw new Error(`Not a source file: ${relative}`);
-  if (stat.size > maxBytes) throw new Error(`Source exceeds ${maxBytes === 2 * 1024 * 1024 ? '2 MiB' : `${maxBytes}-byte`} limit: ${relative}`);
+  if (maxBytes !== null && stat.size > maxBytes) throw new Error(`Source exceeds ${maxBytes === 2 * 1024 * 1024 ? '2 MiB' : `${maxBytes}-byte`} limit: ${relative}`);
   return actual;
 }
 export async function atomicOutput(destination, data, protectedPaths = []) {

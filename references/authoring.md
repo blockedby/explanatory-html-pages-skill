@@ -51,7 +51,7 @@ Local raster images are optional. When a document needs one, create an `images/`
 
 A bare `<img>` is supported too. Every image needs an `alt` attribute; use `alt=""` only for intentional decoration. Alt text supplies the image's accessible meaning; a caption should explain what to notice rather than replace it. Supported local files are PNG, JPEG (`.jpg`, `.jpeg`) and WebP. The build embeds the original bytes as a `data:image/...;base64,...` URL and supplies intrinsic dimensions for responsive, uncropped display. The reader has no network dependency for these images. Do not use a remote or data URL as an authored `src`, SVG/GIF, `srcset`, `style`, `onload`, or arbitrary `<iframe>`/HTML embedding.
 
-Image paths and symlinks must resolve within the document directory, and the output cannot overwrite an image source. Each still image is limited to 8 MiB, 40 million pixels and 65,535 pixels per axis; document totals are limited to 32 MiB of raw image bytes and 80 million pixels, counting every occurrence. Animated PNG/WebP and multi-image JPEG are rejected. Metadata/EXIF is not stripped, so do not use private images inadvertently. Format/header checks are not a full pixel decoder.
+Image paths and symlinks must resolve within the document directory, and the output cannot overwrite an image source. Images are embedded as provided, without toolkit-imposed file-size, resolution or cumulative image limits. Available Node/browser memory and the image formats themselves still impose practical limits. Animated PNG/WebP and multi-image JPEG are rejected. Metadata/EXIF is not stripped, so do not use private images inadvertently. Format/header checks are not a full pixel decoder.
 
 ## Revising an existing document
 

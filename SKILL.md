@@ -50,7 +50,7 @@ Local raster images are optional, not a requirement for every document. Create a
 </figure>
 ```
 
-A bare `<img>` is also supported. Every image needs `alt`; use `alt=""` only for intentionally decorative images. Use the `alt` text for the image's accessible meaning and the caption to explain what to notice. PNG, JPEG (`.jpg`, `.jpeg`) and WebP are supported. The build embeds original bytes as a `data:image/...;base64,...` URL with intrinsic dimensions for responsive, uncropped display; reading the result needs no network. Do not use a remote or data URL as an authored `src`, SVG/GIF, `srcset`, `style`, `onload`, or arbitrary `<iframe>`/HTML embedding. See [authoring.md](references/authoring.md) for path and size limits.
+A bare `<img>` is also supported. Every image needs `alt`; use `alt=""` only for intentionally decorative images. Use the `alt` text for the image's accessible meaning and the caption to explain what to notice. PNG, JPEG (`.jpg`, `.jpeg`) and WebP are supported. The build embeds original bytes as a `data:image/...;base64,...` URL with intrinsic dimensions for responsive, uncropped display; reading the result needs no network. Do not use a remote or data URL as an authored `src`, SVG/GIF, `srcset`, `style`, `onload`, or arbitrary `<iframe>`/HTML embedding. Images are embedded as provided, without toolkit-imposed size or resolution caps. See [authoring.md](references/authoring.md) for local-file rules.
 
 Use the amount of explanation the subject needs:
 

@@ -1,19 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, realpath, rm, symlink, truncate, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {
-  MAX_IMAGE_BYTES,
-  MAX_IMAGE_PIXELS,
-  prepareImage,
-} from '../scripts/lib/images.mjs';
+import { crc32 } from 'node:zlib';
+import { prepareImage } from '../scripts/lib/images.mjs';
 
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAYAAAC56t6BAAAAFUlEQVR4nGP8z8Dwn4GBgYEJRKAwADE7AgRVI0g0AAAAAElFTkSuQmCC';
 const JPEG = '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAADAAIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDzqiiivjj+kT//2Q==';
 const WEBP_VP8 = 'UklGRjwAAABXRUJQVlA4IDAAAADQAQCdASoCAAMAAUAmJaACdLoB+AADsAD+8ut//NgVzXPv9//S4P0uD9Lg/9KQAAA=';
 const WEBP_VP8L = 'UklGRhwAAABXRUJQVlA4TA8AAAAvAYAAAAcQ/Y/+ByKi/wEA';
 const WEBP_VP8X = 'UklGRl4AAABXRUJQVlA4WAoAAAAQAAAAAQAAAgAAQUxQSAcAAAAAgICAgICAAFZQOCAwAAAA0AEAnQEqAgADAAFAJiWgAnS6AfgAA7AA/vLrf/zYFc1z7/f/0uD9Lg/S4P/SkAAA';
+
+function pngWithDimensions(width, height) {
+  const data = Buffer.from(PNG, 'base64');
+  data.writeUInt32BE(width, 16);
+  data.writeUInt32BE(height, 20);
+  data.writeUInt32BE(crc32(data.subarray(12, 29)), 29);
+  return data;
+}
 
 async function workspace(t) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'image-test-'));
@@ -39,11 +44,6 @@ async function expectPrepared(root, name, base64, mime) {
     mime,
   });
 }
-
-test('exports the fixed byte and pixel limits', () => {
-  assert.equal(MAX_IMAGE_BYTES, 8 * 1024 * 1024);
-  assert.equal(MAX_IMAGE_PIXELS, 40_000_000);
-});
 
 test('embeds PNG and JPEG bytes exactly with canonical filenames', async t => {
   const root = await workspace(t);
@@ -141,10 +141,10 @@ test('rejects outside symlinks while allowing only regular files', async t => {
   await assert.rejects(prepareImage(root, 'directory.png'), /Not a source file|regular file/);
 });
 
-test('accepts a confined regular image above the generic 2 MiB source limit', async t => {
+test('accepts a confined regular image above 8 MiB', async t => {
   const root = await workspace(t);
   const original = Buffer.from(WEBP_VP8L, 'base64');
-  const paddingSize = (2 * 1024 * 1024) + 2;
+  const paddingSize = (8 * 1024 * 1024) + 2;
   const paddingChunk = Buffer.alloc(8 + paddingSize);
   paddingChunk.write('JUNK', 0, 'ascii');
   paddingChunk.writeUInt32LE(paddingSize, 4);
@@ -152,31 +152,30 @@ test('accepts a confined regular image above the generic 2 MiB source limit', as
   image.writeUInt32LE(image.length - 8, 4);
   await writeFile(path.join(root, 'large.webp'), image);
   const result = await prepareImage(root, 'large.webp');
+  assert.ok(image.length > 8 * 1024 * 1024);
   assert.equal(result.bytes, image.length);
   assert.equal(result.width, 2);
   assert.equal(result.height, 3);
 });
 
-test('rejects regular files over 8 MiB before reading their payload', async t => {
-  const root = await workspace(t);
-  const oversized = path.join(root, 'oversized.png');
-  await writeFile(oversized, Buffer.from(PNG, 'base64'));
-  await truncate(oversized, MAX_IMAGE_BYTES + 1);
-  await assert.rejects(prepareImage(root, 'oversized.png'), /8388608-byte limit/);
-});
-
-test('rejects zero dimensions and dimensions over the pixel cap', async t => {
+test('rejects zero dimensions but accepts dimensions beyond former caps', async t => {
   const root = await workspace(t);
   const zero = Buffer.from(PNG, 'base64');
   zero.writeUInt32BE(0, 16);
   await writeFile(path.join(root, 'zero.png'), zero);
   await assert.rejects(prepareImage(root, 'zero.png'), /positive integers/);
 
-  const huge = Buffer.from(PNG, 'base64');
-  huge.writeUInt32BE(10_000, 16);
-  huge.writeUInt32BE(4_001, 20);
+  const huge = pngWithDimensions(10_000, 4_001);
   await writeFile(path.join(root, 'huge.png'), huge);
-  await assert.rejects(prepareImage(root, 'huge.png'), /40000000-pixel limit/);
+  const hugeResult = await prepareImage(root, 'huge.png');
+  assert.equal(hugeResult.width, 10_000);
+  assert.equal(hugeResult.height, 4_001);
+
+  const wide = pngWithDimensions(65_536, 1);
+  await writeFile(path.join(root, 'wide.png'), wide);
+  const wideResult = await prepareImage(root, 'wide.png');
+  assert.equal(wideResult.width, 65_536);
+  assert.equal(wideResult.height, 1);
 });
 
 test('rejects animated PNG and WebP declarations rather than guessing a frame', async t => {

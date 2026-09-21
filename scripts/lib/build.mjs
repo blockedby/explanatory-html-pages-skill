@@ -5,9 +5,6 @@ import { parseContent, readMetadata, escapeHtml as e } from './content.mjs';
 import { prepareSvg } from '../renderers/svg.mjs';
 import { prepareImage } from './images.mjs';
 
-const MAX_DOCUMENT_IMAGE_BYTES = 32 * 1024 * 1024;
-const MAX_DOCUMENT_IMAGE_PIXELS = 80_000_000;
-
 export const messages = {
   en: { topics: 'Topics', sections: 'Document sections', onPage: 'On this page', open: 'Open topics', close: 'Collapse topics', skip: 'Skip to content', source: 'Diagram source', download: 'Download source', scroll: 'Diagram; scroll horizontally to inspect', footer: 'Document / reference' },
   ru: { topics: 'Разделы', sections: 'Разделы документа', onPage: 'На этой странице', open: 'Открыть разделы', close: 'Свернуть разделы', skip: 'К содержимому', source: 'Исходник диаграммы', download: 'Скачать исходник', scroll: 'Диаграмма; прокручивайте по горизонтали для просмотра', footer: 'Документ / справочник' }
@@ -34,15 +31,9 @@ export async function buildDocument(directory, { out } = {}) {
   const text = messages[metadata.lang];
   const protectedPaths = [metadataPath, contentPath];
   const warnings = [];
-  let imageBytes = 0;
-  let imagePixels = 0;
   const images = [...document.querySelectorAll('img')];
   for (const image of images) {
     const prepared = await prepareImage(root, image.getAttribute('src'));
-    imageBytes += prepared.bytes;
-    imagePixels += prepared.width * prepared.height;
-    if (imageBytes > MAX_DOCUMENT_IMAGE_BYTES) throw new Error('Document images exceed 32 MiB total (counting each occurrence).');
-    if (imagePixels > MAX_DOCUMENT_IMAGE_PIXELS) throw new Error('Document images exceed 80 million pixels total (counting each occurrence).');
     protectedPaths.push(prepared.filename);
     image.setAttribute('src', prepared.dataUrl);
     image.setAttribute('width', String(prepared.width));

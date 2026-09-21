@@ -3,10 +3,6 @@ import { open } from 'node:fs/promises';
 import path from 'node:path';
 import { sourceFile } from './paths.mjs';
 
-export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-export const MAX_IMAGE_PIXELS = 40_000_000;
-
-const MAX_IMAGE_DIMENSION = 65_535;
 const MIME_BY_EXTENSION = new Map([
   ['.png', 'image/png'],
   ['.jpg', 'image/jpeg'],
@@ -45,29 +41,15 @@ function validateRequestedPath(relativePath) {
   return expectedMime;
 }
 
-async function readBoundedRegularFile(filename, source) {
+async function readRegularFile(filename, source) {
   let handle;
   try {
     handle = await open(filename, fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW);
     const stat = await handle.stat();
     if (!stat.isFile()) throw imageError(source, 'source is not a regular file.');
-    if (stat.size > MAX_IMAGE_BYTES) {
-      throw imageError(source, `file exceeds the ${MAX_IMAGE_BYTES}-byte limit.`);
-    }
-
-    // One extra byte detects a file that grows after fstat without an unbounded read.
-    const storage = Buffer.allocUnsafe(MAX_IMAGE_BYTES + 1);
-    let total = 0;
-    while (total < storage.length) {
-      const { bytesRead } = await handle.read(storage, total, storage.length - total, null);
-      if (bytesRead === 0) break;
-      total += bytesRead;
-    }
-    if (total > MAX_IMAGE_BYTES) {
-      throw imageError(source, `file exceeds the ${MAX_IMAGE_BYTES}-byte limit.`);
-    }
-    if (total === 0) throw imageError(source, 'file is empty.');
-    return storage.subarray(0, total);
+    const buffer = await handle.readFile();
+    if (buffer.length === 0) throw imageError(source, 'file is empty.');
+    return buffer;
   } catch (error) {
     if (error?.message?.startsWith('Invalid image ')) throw error;
     throw imageError(source, `could not read the regular file (${error?.code ?? error?.message ?? 'unknown error'}).`);
@@ -79,12 +61,6 @@ async function readBoundedRegularFile(filename, source) {
 function dimensions(source, width, height) {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) {
     throw imageError(source, 'intrinsic width and height must be positive integers.');
-  }
-  if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
-    throw imageError(source, `dimensions exceed the ${MAX_IMAGE_DIMENSION}-pixel per-axis limit.`);
-  }
-  if (width * height > MAX_IMAGE_PIXELS) {
-    throw imageError(source, `dimensions exceed the ${MAX_IMAGE_PIXELS}-pixel limit.`);
   }
   return { width, height };
 }
@@ -321,8 +297,8 @@ function detectMime(buffer) {
 
 export async function prepareImage(root, relativePath) {
   const expectedMime = validateRequestedPath(relativePath);
-  const filename = await sourceFile(root, relativePath, { maxBytes: MAX_IMAGE_BYTES });
-  const buffer = await readBoundedRegularFile(filename, relativePath);
+  const filename = await sourceFile(root, relativePath, { maxBytes: null });
+  const buffer = await readRegularFile(filename, relativePath);
   const mime = detectMime(buffer);
   if (!mime) throw imageError(relativePath, 'content is not a supported PNG, JPEG, or WebP image.');
   if (mime !== expectedMime) throw imageError(relativePath, `file extension does not match detected ${mime} content.`);

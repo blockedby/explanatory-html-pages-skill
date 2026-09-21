@@ -17,6 +17,17 @@ function chunk(type, data) {
 }
 const header = Buffer.from('00000001000000010806000000', 'hex');
 const png = Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), chunk('IHDR', header), chunk('IDAT', deflateSync(Buffer.from([0, 30, 60, 90, 255]))), chunk('IEND', Buffer.alloc(0))]);
+function pngWithDimensions(width, height) {
+  const dimensions = Buffer.from(header);
+  dimensions.writeUInt32BE(width, 0);
+  dimensions.writeUInt32BE(height, 4);
+  return Buffer.concat([
+    Buffer.from('89504e470d0a1a0a', 'hex'),
+    chunk('IHDR', dimensions),
+    chunk('IDAT', deflateSync(Buffer.from([0, 30, 60, 90, 255]))),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
 const content = fragment => `<section id="picture"><h2>Picture</h2>${fragment}</section>`;
 async function workspace(t) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'image-build-'));
@@ -78,7 +89,7 @@ test('invalid images and escaping symlinks fail atomically, preserving previous 
   }
 });
 
-test('source byte limit overrides are explicit and validated', async t => {
+test('source byte limit overrides are explicit, validated, and nullable', async t => {
   const root = await workspace(t);
   await writeFile(path.join(root, 'image.png'), png);
   for (const maxBytes of [0, -1, NaN, Infinity, 1.5, '8']) {
@@ -86,33 +97,35 @@ test('source byte limit overrides are explicit and validated', async t => {
   }
   await assert.rejects(sourceFile(root, 'image.png', { maxBytes: 1 }), /1-byte limit/);
   assert.equal(await sourceFile(root, 'image.png', { maxBytes: png.length }), path.join(root, 'image.png'));
+  assert.equal(await sourceFile(root, 'image.png', { maxBytes: null }), path.join(root, 'image.png'));
 });
 
-test('document pixel budget also bounds highly compressed images', async t => {
+test('document embeds image occurrences beyond the former cumulative pixel budget', async t => {
   const root = await workspace(t);
-  const largeHeader = Buffer.alloc(13);
-  largeHeader.writeUInt32BE(8000, 0); largeHeader.writeUInt32BE(5000, 4); largeHeader[8] = 8;
-  const large = Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), chunk('IHDR', largeHeader), chunk('IDAT', deflateSync(Buffer.alloc(8001 * 5000))), chunk('IEND', Buffer.alloc(0))]);
+  const large = pngWithDimensions(8_000, 5_000);
   await writeFile(path.join(root, 'large.png'), large);
   const markup = '<img src="large.png" alt="Compressed raster">';
   const out = path.join(root, 'report.html');
-  await writeFile(path.join(root, 'content.html'), content(markup.repeat(2)));
-  assert.equal((await buildDocument(root, { out })).images, 2);
-  const previous = await readFile(out, 'utf8');
   await writeFile(path.join(root, 'content.html'), content(markup.repeat(3)));
-  await assert.rejects(buildDocument(root, { out }), /80 million pixels total/);
-  assert.equal(await readFile(out, 'utf8'), previous);
+  const result = await buildDocument(root, { out });
+  assert.equal(result.images, 3);
+  const document = new JSDOM(await readFile(out, 'utf8')).window.document;
+  assert.equal(document.querySelectorAll('img').length, 3);
+  assert.equal(document.querySelector('img').getAttribute('width'), '8000');
+  assert.equal(document.querySelector('img').getAttribute('height'), '5000');
 });
 
-test('document total image budget counts repeated occurrences', async t => {
+test('document embeds repeated image bytes beyond the former cumulative byte budget', async t => {
   const root = await workspace(t);
   // Valid PNG with a large ancillary text chunk, without a large decoded image.
   const padded = Buffer.concat([png.subarray(0, -12), chunk('tEXt', Buffer.concat([Buffer.from('Padding\0'), Buffer.alloc(7 * 1024 * 1024, 65)])), png.subarray(-12)]);
   await writeFile(path.join(root, 'large.png'), padded);
+  assert.ok(padded.length * 5 > 32 * 1024 * 1024);
   await assert.rejects(sourceFile(root, 'large.png'), /2 MiB limit/, 'ordinary sources retain their smaller default limit');
   await writeFile(path.join(root, 'content.html'), content('<img src="large.png" alt="Test">'.repeat(5)));
   const out = path.join(root, 'report.html');
-  await writeFile(out, 'previous report');
-  await assert.rejects(buildDocument(root, { out }), /32 MiB total/);
-  assert.equal(await readFile(out, 'utf8'), 'previous report');
+  const result = await buildDocument(root, { out });
+  assert.equal(result.images, 5);
+  const output = await readFile(out, 'utf8');
+  assert.equal((output.match(/data:image\/png;base64,/g) ?? []).length, 5);
 });
