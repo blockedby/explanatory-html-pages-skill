@@ -78,7 +78,7 @@ h1 { max-width: 32ch; font-size: clamp(2rem, 3.5cqi, 2.75rem); line-height: 1.1;
 
 h1 em { color: var(--accent); font-style: normal; }
 
-.lead { max-width: 76ch; margin-bottom: 0px; font-size: 1rem; line-height: 1.5; }
+.lead { margin-bottom: 0px; font-size: 1rem; line-height: 1.5; }
 
 .reading-pane, .document-content { container-type: inline-size; }
 
@@ -162,8 +162,7 @@ main > section { padding: 1.5rem 0; border-bottom: 2px solid var(--line); }
 
 /* Direct builder sections and legacy section > .page share one measure. */
 main.page .page { width: 100%; }
-.document-intro { max-width: 76ch; padding-block: 1.5rem 0; }
-main > section > p, main > section > ul, main > section > ol:not(.steps) { max-width: 76ch; }
+.document-intro { padding-block: 1.5rem 0; }
 main, main > section, figure, .reading-pane { min-width: 0; }
 h1, h2, h3, p, li, dd, td, th { overflow-wrap: anywhere; }
 main > section > :last-child { margin-bottom: 0; }
@@ -179,9 +178,9 @@ h2 code { padding: 0; border: 0; background: transparent; font-size: 0.88em; ove
 
 h3 { margin-bottom: 0.7rem; font-size: 1.25rem; line-height: 1.15; }
 
-.section-intro { max-width: 65ch; margin-bottom: 0px; font-size: 1.05rem; line-height: 1.5; }
+.section-intro { margin-bottom: 0px; font-size: 1.05rem; line-height: 1.5; }
 
-.definition { max-width: 76ch; color: var(--paper); background: var(--ink); box-shadow: none; padding: 1.25rem; }
+.definition { color: var(--paper); background: var(--ink); box-shadow: none; padding: 1.25rem; }
 
 /* A definition becomes two-column only when it has the supported signal list. */
 .definition:has(> .signal-list) { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.5rem; max-width: none; }
@@ -191,8 +190,6 @@ h3 { margin-bottom: 0.7rem; font-size: 1.25rem; line-height: 1.15; }
 .definition-label { margin-bottom: 0.4rem; color: rgb(176, 176, 176); font-family: "Courier New", Courier, monospace; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 
 .definition h2 { max-width: 36ch; color: var(--paper); }
-
-.definition p { max-width: 43rem; }
 
 .definition .important { color: rgb(255, 255, 255); font-size: 1.05rem; font-weight: 700; line-height: 1.35; margin-bottom: 0.65rem; }
 
@@ -266,7 +263,7 @@ figcaption { padding-top: 1rem; border-top: 1px solid var(--rule); font-size: 1r
 
 figcaption strong { margin-right: 0.35rem; }
 
-.note-strip { max-width: 76ch; border-left: 0.4rem solid var(--accent); background: var(--accent-soft); margin-top: 1rem; padding: 1rem; }
+.note-strip { border-left: 0.4rem solid var(--accent); background: var(--accent-soft); margin-top: 1rem; padding: 1rem; }
 
 /* Only a separate label followed by one complete paragraph opts into columns. */
 .note-strip:has(> strong:first-child + p:last-child) { display: grid; grid-template-columns: minmax(9rem, 0.45fr) minmax(0, 1.55fr); gap: 1.5rem; }
@@ -337,7 +334,7 @@ figcaption strong { margin-right: 0.35rem; }
 
 .principle p:last-child { margin-bottom: 0px; color: var(--muted); }
 
-.takeaway { max-width: 76ch; border: 3px solid var(--line); box-shadow: var(--shadow); margin-top: 1rem; padding: 1.1rem; }
+.takeaway { border: 3px solid var(--line); box-shadow: var(--shadow); margin-top: 1rem; padding: 1.1rem; }
 
 /* The labelled component retains its editorial split; plain conclusions use the full measure. */
 .takeaway:has(> .takeaway-label) { display: grid; grid-template-columns: minmax(8rem, 0.55fr) minmax(0, 1.45fr); gap: 1.5rem; align-items: start; }
@@ -458,7 +455,6 @@ main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) minmax(0, 3fr);
   gap: 0;
-  max-width: 76ch;
   margin-block: 1rem;
   border-block: 1px solid var(--rule);
 }

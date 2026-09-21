@@ -74,7 +74,7 @@ Long technical names are valid in headings, but use `code` only for the identifi
 
 ## Styling contract
 
-Callouts use natural text flow by default. Structured columns are reserved for a `.definition` with a direct `.signal-list`, a `.note-strip` with a direct `strong` label followed by its sole `p`, or a `.takeaway` with a direct `.takeaway-label`. These structures stack on narrow screens. Plain callouts and `.doc-facts` follow the prose measure; full data tables and diagram regions retain their wider layout.
+Callouts use natural text flow by default. Structured columns are reserved for a `.definition` with a direct `.signal-list`, a `.note-strip` with a direct `strong` label followed by its sole `p`, or a `.takeaway` with a direct `.takeaway-label`. These structures stack on narrow screens. Ordinary prose, plain callouts, `.doc-facts`, tables and diagram regions share the section's bounded responsive width. Do not impose a separate narrow text column beneath a wide diagram. Padding belongs inside a callout; oversized diagrams scroll locally rather than shrinking their labels.
 
 `assets/components.css` adds only optional `.doc-*` primitives. Load it after canonical `assets/theme.css` when assembling a catalog or report; shell integration belongs to the builder, not to source authors. No per-snippet stylesheet, runtime library, or custom DSL is needed.
 

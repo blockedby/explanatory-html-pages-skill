@@ -105,11 +105,16 @@ test('semantic callouts keep natural flow and structured variants keep intention
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <style>${theme}\n${components}</style><title>Layout regression</title></head><body>
 <details class="topic-panel" id="topic-panel" open><summary class="topic-toggle"><span class="topic-icon">☰</span><span class="topic-label">Содержание</span></summary><nav class="toc"><ul><li><a href="#ordinary">Обычный контент</a></li><li><a href="#structured">Структурный контент</a></li></ul></nav></details>
+<header class="site-header"><div class="page masthead-grid"><h1>Общий канонический холст документа</h1><p class="lead fixture-header-lead">Вводный текст шапки использует ту же ограниченную ширину страницы, а не отдельную узкую полосу.</p></div></header>
 <main class="page document-content">
+<p class="document-intro">Введение документа выровнено с секциями и не получает независимое ограничение длины строки.</p>
 <section id="ordinary"><h2><code>explanatory-html-pages-with-an-intentionally-long-skill-name</code>: офлайн-документ через общий design system</h2>
-<p class="fixture-prose">Скилл превращает материалы в читаемый документ. Основной текст сохраняет удобную длину строки и общую левую границу с фактами.</p>
+<p class="section-intro">Секция, обычный текст и широкие содержательные элементы используют общий адаптивный холст.</p>
+<figure class="diagram fixture-diagram"><div class="diagram-viewport"><svg width="1080" height="80" viewBox="0 0 1080 80" role="img" aria-label="Тестовая широкая диаграмма"><rect width="1080" height="80" fill="#eeeeee"/><path d="M20 40H1060" stroke="#191919" stroke-width="3"/></svg></div></figure>
+<p class="fixture-prose">Абзац сразу после диаграммы занимает доступную ширину секции. Он больше не выглядит узкой левой полосой с огромным пустым полем справа.</p>
+<ul class="fixture-list"><li>Обычные списки выровнены с абзацами и широкими элементами секции.</li></ul>
 <div class="definition"><p class="definition-label">Главный принцип</p><p>Выбирайте скилл по требуемому результату и типу доказательств, а не по сходству названия с темой задачи.</p></div>
-<dl class="doc-facts"><dt>Когда выбрать</dt><dd>Нужен содержательный офлайн HTML с общей темой и семантическими компонентами.</dd><dt>Ожидаемый результат</dt><dd><code>document.json</code>, обычный <code>content.html</code> и собранный автономный HTML.</dd></dl>
+<dl class="doc-facts"><dt><span>Когда выбрать</span></dt><dd><span>Нужен содержательный офлайн HTML с общей темой и семантическими компонентами.</span></dd><dt><span>Ожидаемый результат</span></dt><dd><span><code>document.json</code>, обычный <code>content.html</code> и собранный автономный HTML.</span></dd></dl>
 <aside class="note-strip" id="inline-note"><strong>Важно:</strong> при отсутствующих или неоднозначных критериях скилл не должен додумывать их; итогом будет <code>NOT VERIFIED</code>, а не оптимистичная готовность.</aside>
 <div class="takeaway" id="plain-takeaway"><p><strong>Практический вывод:</strong> начните с таблицы выбора, затем передайте агенту входы из карточки и явно разрешите только необходимые инструменты.</p></div></section>
 <section id="structured"><h2>Поддерживаемые структурные варианты</h2>
@@ -143,6 +148,7 @@ test('semantic callouts keep natural flow and structured variants keep intention
         const sharesLine = current.top < previous.bottom && current.bottom > previous.top;
         return sharesLine ? current.left >= previous.left : current.top >= previous.bottom - 2;
       };
+      const section = box('#ordinary');
       const definition = box('#ordinary .definition');
       const definitionLabel = box('#ordinary .definition-label');
       const definitionCopy = box('#ordinary .definition > p:last-child');
@@ -152,6 +158,8 @@ test('semantic callouts keep natural flow and structured variants keep intention
       const headingCode = heading.querySelector('code');
       const prose = box('.fixture-prose');
       const facts = box('.doc-facts');
+      const inlineNote = box('#inline-note');
+      const factsCopy = box('.doc-facts dt:first-child > span');
       const richCopy = box('#rich-definition > div');
       const signals = box('#rich-definition > .signal-list');
       const structuredLabel = box('#structured-takeaway > .takeaway-label');
@@ -169,8 +177,35 @@ test('semantic callouts keep natural flow and structured variants keep intention
         takeawayRatio: takeawayCopy.width / (takeaway.width - 35.2),
         headingFits: heading.scrollWidth <= heading.clientWidth + 1,
         headingCode: { border: getComputedStyle(headingCode).borderTopWidth, padding: getComputedStyle(headingCode).paddingLeft, background: getComputedStyle(headingCode).backgroundColor },
-        measureDelta: Math.abs(prose.width - facts.width),
-        tableWiderThanFacts: box('.doc-table-scroll').width > facts.width + 100,
+        sectionWidth: section.width,
+        sharedWidths: {
+          headerLead: box('.fixture-header-lead').width,
+          documentIntro: box('.document-intro').width,
+          sectionIntro: box('.section-intro').width,
+          diagram: box('.fixture-diagram').width,
+          followingParagraph: prose.width,
+          list: box('.fixture-list').width,
+          definition: definition.width,
+          facts: facts.width,
+          note: inlineNote.width,
+          takeaway: takeaway.width,
+          table: box('.doc-table-scroll').width,
+        },
+        sharedLefts: {
+          followingParagraph: prose.left,
+          list: box('.fixture-list').left,
+          definition: definition.left,
+          facts: facts.left,
+          note: inlineNote.left,
+          takeaway: takeaway.left,
+        },
+        sectionLeft: section.left,
+        interiorPadding: {
+          definition: definitionCopy.left - definition.left,
+          facts: factsCopy.left - facts.left,
+          note: parseFloat(getComputedStyle(note).paddingLeft),
+          takeaway: takeawayCopy.left - takeaway.left,
+        },
         richColumns: signals.left > richCopy.right - 2,
         structuredTakeawayColumns: structuredCopy.left > structuredLabel.right - 2,
         structuredNoteColumns: noteCopy.left > noteLabel.right - 2,
@@ -189,9 +224,16 @@ test('semantic callouts keep natural flow and structured variants keep intention
     assert.ok(metrics.takeawayRatio > 0.85, `${width}px: single-child takeaway occupies its useful measure`);
     assert.equal(metrics.headingFits, true, `${width}px: long code heading wraps inside its heading`);
     assert.deepEqual(metrics.headingCode, { border: '0px', padding: '0px', background: 'rgba(0, 0, 0, 0)' }, `${width}px: heading code is not a padded chip`);
-    assert.ok(metrics.measureDelta <= 2, `${width}px: prose and facts share a readable measure`);
+    for (const [name, actualWidth] of Object.entries(metrics.sharedWidths)) {
+      assert.ok(Math.abs(actualWidth - metrics.sectionWidth) <= 2, `${width}px/${open ? 'open' : 'closed'}: ${name} shares the section canvas (${actualWidth} vs ${metrics.sectionWidth})`);
+    }
+    for (const [name, actualLeft] of Object.entries(metrics.sharedLefts)) {
+      assert.ok(Math.abs(actualLeft - metrics.sectionLeft) <= 2, `${width}px/${open ? 'open' : 'closed'}: ${name} has no per-element left strip`);
+    }
+    for (const [name, inset] of Object.entries(metrics.interiorPadding)) {
+      assert.ok(inset >= 10, `${width}px/${open ? 'open' : 'closed'}: ${name} preserves interior padding (${inset})`);
+    }
     if (width >= 768) {
-      if (width >= 1000) assert.equal(metrics.tableWiderThanFacts, true, `${width}px: data tables are not narrowed to prose measure`);
       assert.equal(metrics.richColumns, true, `${width}px: rich definition retains columns`);
       assert.equal(metrics.structuredTakeawayColumns, true, `${width}px: labelled takeaway retains columns`);
       assert.equal(metrics.structuredNoteColumns, true, `${width}px: paragraph note retains columns`);
@@ -202,11 +244,12 @@ test('semantic callouts keep natural flow and structured variants keep intention
     }
   };
 
-  await assertLayout(1920, true);
-  await assertLayout(1440, false);
-  await page.locator('#topic-panel').evaluate(node => { node.open = true; });
+  for (const width of [1920, 1440, 768, 390]) {
+    await assertLayout(width, true);
+    await assertLayout(width, false);
+  }
+  await assertLayout(1440, true);
   await page.screenshot({ path: '/tmp/documentation-layout-regression-desktop.png', fullPage: true });
-  await assertLayout(768, true);
   await assertLayout(390, false);
   await page.screenshot({ path: '/tmp/documentation-layout-regression-mobile.png', fullPage: true });
 });

@@ -4,6 +4,12 @@ Tracking: https://github.com/blockedby/explanatory-html-pages-skill/issues/1
 
 Verified on Linux x64 with Node 24.21.0. Builds use npm dependencies only: PlantUML TeaVM/Viz.js in Node, BPMN XML/DI preparation in Node, and embedded bpmn-js/DOMPurify in the reader. Neither Java nor Chromium is a build requirement. Chromium was used only as an optional development tool to test the ordinary reader-browser path. This is implementation acceptance, not proof of business correctness.
 
+## Shared section-width follow-up
+
+Removed independent prose/callout width caps: the bounded responsive `.page` now owns the common canvas for prose, lists, fact blocks, tables and diagrams. This supersedes the separate 76ch fact/callout measure in the preceding natural-flow fix; inline-flow safety remains unchanged.
+
+Worker verification passed 45 unit tests and 11 browser scenarios. Parent rebuilt all examples/template plus both delivered documents (`skills-overview` and `pipi-pipelines-guide`), then freshly passed all 11 browser scenarios, repository validation and diff checks. Geometry regression covers 1920/1440/768/390px with sidebar open/closed. A separate actual-report probe measured the execution section and following paragraph at 1152px each, left-edge delta 0; inspected `/tmp/pipi-width-fixed-desktop.png`. An initial probe had an ambiguous locator because the section contains two figures; selecting the first paragraph fixed the probe without changing document code.
+
 ## Natural-flow layout regression verification
 
 Fixed the catalog's empty definition column, fragmented inline note, boxed technical heading and mismatched fact/prose widths in canonical CSS. Natural-flow callouts remain compact; supported structured components keep responsive columns. A paragraph-only note explicitly stays in natural flow.
