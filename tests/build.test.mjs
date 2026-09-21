@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, rm, symlink } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
@@ -28,6 +28,22 @@ test('scaffold/build works from another cwd and embeds canonical assets', async 
   assert.ok(html.includes(await readFile(path.join(toolkitRoot, 'assets/theme.css'), 'utf8')));
   assert.ok(html.includes(await readFile(path.join(toolkitRoot, 'assets/components.css'), 'utf8')));
   assert.ok(html.includes(await readFile(path.join(toolkitRoot, 'assets/navigation.js'), 'utf8')));
+});
+test('CLI runs through a skill-directory symlink used by agent installers', async t => {
+  const root = await workspace(t);
+  const link = path.join(root, 'installed-skill');
+  await symlink(toolkitRoot, link, 'junction');
+  const cli = path.join(link, 'scripts/document.mjs');
+  const source = path.join(root, 'document');
+  const options = { cwd: os.tmpdir() };
+  const created = await execute(process.execPath, [cli, 'create', source, '--title', 'Linked skill'], options);
+  assert.match(created.stdout, /Created:/);
+  const output = path.join(root, 'report.html');
+  const built = await execute(process.execPath, [cli, 'build', source, '--out', output], options);
+  assert.match(built.stdout, /Built:/);
+  assert.match(await readFile(output, 'utf8'), /Linked skill/);
+  const diagnosed = await execute(process.execPath, [cli, 'doctor'], options);
+  assert.equal(JSON.parse(diagnosed.stdout).ready, true);
 });
 test('failed builds preserve previous output and cannot overwrite source', async t => {
   const root = await workspace(t); const source = path.join(root, 'doc');

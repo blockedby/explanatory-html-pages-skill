@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import path from 'node:path';
+import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const help = `Documentation toolkit — reuse the theme, author the content.
@@ -50,7 +50,7 @@ export async function main(argv = process.argv.slice(2)) {
     for (const warning of result.warnings) console.warn(`Note: ${warning}`);
   }
 }
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   main().catch(error => {
     const message = error.code === 'ERR_MODULE_NOT_FOUND' ? `${error.message}\nRun node scripts/setup.mjs from the skill directory first.` : error.message;
     console.error(`Error: ${message}`);
