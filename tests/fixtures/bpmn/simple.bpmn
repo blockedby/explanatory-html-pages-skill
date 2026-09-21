@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_simple" targetNamespace="urn:local:example">
+  <bpmn:process id="Process_simple" isExecutable="false">
+    <bpmn:startEvent id="Start" name="Request received"><bpmn:outgoing>Flow_1</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:task id="Review" name="Review request"><bpmn:incoming>Flow_1</bpmn:incoming><bpmn:outgoing>Flow_2</bpmn:outgoing></bpmn:task>
+    <bpmn:endEvent id="End" name="Completed"><bpmn:incoming>Flow_2</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Review" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Review" targetRef="End" />
+  </bpmn:process>
+</bpmn:definitions>

@@ -1,0 +1,38 @@
+<section id="ownership">
+  <h2>Define the boundary before the payload</h2>
+  <p>This fictional contract connects a checkout client, the Orders service and a fulfilment subscriber. Orders owns order identity and acceptance; fulfilment owns warehouse execution. A successful submission means an order is recorded, not that a parcel has shipped.</p>
+  <p>The example assumes authenticated service calls and an outbox stored in the same database as the order. It does not prescribe a particular broker or deployment platform. Those choices should not change the externally visible meaning of acceptance.</p>
+</section>
+<section id="api-contract">
+  <h2>Submit an order</h2>
+  <p><code>POST /v1/orders</code> requires a caller-scoped <code>Idempotency-Key</code>. The server derives the customer identity from the authenticated caller rather than trusting an arbitrary customer ID in the body.</p>
+  <table class="boundary-table"><caption>Request and response fields</caption><thead><tr><th scope="col">Field</th><th scope="col">Type</th><th scope="col">Meaning and validation</th></tr></thead><tbody><tr><td>items</td><td>array</td><td>1–100 order lines; duplicate SKUs are rejected in this contract</td></tr><tr><td>items[].sku</td><td>string</td><td>Nonempty catalog identifier, up to 64 characters</td></tr><tr><td>items[].quantity</td><td>integer</td><td>1–999; floating quantities are not accepted</td></tr><tr><td>orderId</td><td>string</td><td>Server-generated identity returned after successful persistence</td></tr><tr><td>status</td><td>string</td><td>Initially accepted; it is not a shipping confirmation</td></tr></tbody></table>
+  <pre><code>{
+  "items": [{ "sku": "NOTEBOOK-A5", "quantity": 2 }]
+}</code></pre>
+  <p>A valid first submission returns <code>201</code> and a representation of the order. A replay returns the stored result. Invalid fields produce <code>422</code>; reusing a key with a different normalized payload produces <code>409</code>. An unauthenticated caller receives <code>401</code> before the operation is considered.</p>
+</section>
+<section id="sequence">
+  <h2>Persistence and publication are different boundaries</h2>
+  <figure data-diagram="plantuml" data-source="diagrams/submission.puml"><figcaption>The order and its outbox event are committed together. Publication happens later; a broker outage delays delivery but does not turn an accepted order into an unrecorded one.</figcaption></figure>
+  <p>The database transaction protects the local invariant: an accepted order has an event waiting to be published. It does not make a distributed transaction out of the database and the broker. The publisher may send the same event again after losing an acknowledgement.</p>
+</section>
+<section id="event-contract">
+  <h2>Consumers receive an event, not a command to repeat blindly</h2>
+  <table class="boundary-table"><caption>order.accepted.v1 event envelope</caption><thead><tr><th scope="col">Field</th><th scope="col">Rule</th><th scope="col">Consumer responsibility</th></tr></thead><tbody><tr><td>eventId</td><td>Stable across redelivery</td><td>Record once to suppress duplicate effects</td></tr><tr><td>occurredAt</td><td>UTC timestamp of acceptance</td><td>Do not confuse with local arrival time</td></tr><tr><td>orderId</td><td>Accepted order identity</td><td>Associate fulfilment work with this order</td></tr><tr><td>schemaVersion</td><td>1 for this envelope</td><td>Reject unsupported major versions visibly</td></tr></tbody></table>
+  <p>The consumer commits its duplicate marker and local work together before acknowledging delivery. Deduplication protects effects only if it shares the same transaction as those effects; writing a marker first and crashing before the work would lose the operation.</p>
+</section>
+<section id="mapping">
+  <h2>Preserve meaning through mapping</h2>
+  <table class="boundary-table"><caption>Orders to fulfilment mapping</caption><thead><tr><th scope="col">Source</th><th scope="col">Target</th><th scope="col">Transformation</th></tr></thead><tbody><tr><td>orderId</td><td>externalOrderId</td><td>Copy exactly; do not derive it from a display number</td></tr><tr><td>items[].sku</td><td>lines[].catalogRef</td><td>Copy only after validating catalog compatibility</td></tr><tr><td>items[].quantity</td><td>lines[].units</td><td>Preserve the positive integer; no silent rounding</td></tr></tbody></table>
+</section>
+<section id="recovery">
+  <h2>Recovery is part of the contract</h2>
+  <dl><dt>Client timeout</dt><dd>Retry the same request with the same key. A new key expresses a new operation and can create another order.</dd><dt>Broker unavailable</dt><dd>Keep the outbox record and retry publication with backoff. Monitor age as well as queue length.</dd><dt>Duplicate event</dt><dd>Return the previously committed local outcome without creating duplicate warehouse work.</dd><dt>Poison event</dt><dd>Stop automatic retries after the configured budget, retain evidence and alert an owner. Do not quietly discard it.</dd></dl>
+  <details class="deep-dive"><summary>Retention is an explicit assumption</summary><div class="deep-dive-content"><p>This example assumes a 24-hour request-key retention window and a seven-day consumer deduplication window. Production values depend on actual retry and replay policy. A replay beyond a deleted deduplication record may create another effect, so retention must be coordinated with the operational replay procedure.</p></div></details>
+</section>
+<section id="acceptance">
+  <h2>Acceptance checks target observable effects</h2>
+  <ol><li>Two concurrent submissions with the same caller, key and payload produce one order.</li><li>The same key with a changed quantity returns a conflict and leaves the original order unchanged.</li><li>A crash after database commit but before the response can be recovered by replaying the key.</li><li>A broker outage leaves accepted orders with pending outbox records and a visible operational signal.</li><li>Redelivering an event produces one fulfilment effect, including a crash between processing and acknowledgement.</li></ol>
+  <p>These are specification examples, not claims about a tested production service. Before adopting the contract, choose ownership, retention and error budgets that match the actual system.</p>
+</section>

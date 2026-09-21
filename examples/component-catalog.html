@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Reusable semantic HTML for explanations, business analysis and integration specifications. Choose components that answer the reader’s question; do not include every component in every document."><title>Documentation component catalog</title>
+<style>
+/* Canonical compact monochrome theme. No density class required. */
+:root { color-scheme: light; --ink: #191919; --paper: #faf9f6; --surface: #ffffff; --wash: #f1f2f4; --muted: #626262; --line: #2f3033; --rule: #d5d7da; --accent: #191919; --accent-soft: #eef0f2; --teal: #444444; --measure: 76rem; --shadow: 0.55rem 0.55rem 0 var(--ink); }
+
+*,
+    *::before,
+    *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; background: var(--paper); }
+
+body { margin: 0px; color: var(--ink); background: var(--paper); font-family: Arial, Helvetica, sans-serif; font-size: 1rem; line-height: 1.6; text-rendering: optimizelegibility; }
+
+::selection { color: var(--paper); background: var(--ink); text-shadow: none; }
+
+.definition::selection,
+    .definition ::selection,
+    .node--dark::selection,
+    .node--dark ::selection,
+    .boundary-table th::selection,
+    .boundary-table th ::selection { color: var(--ink); background: rgb(232, 232, 232); }
+
+a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 0.18em; }
+
+a:hover { text-decoration-style: double; }
+
+a:focus-visible,
+    summary:focus-visible,
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+
+code,
+    .eyebrow,
+    .section-kicker,
+    .node-role,
+    .node-index,
+    .connector-label,
+    .diagram-label,
+    .diagram-key,
+    .step-boundary,
+    .step-index,
+    .principle-index,
+    .takeaway-label,
+    .footer-mark { font-family: "Courier New", Courier, monospace; }
+
+code { padding: 0.08em 0.3em; border: 1px solid var(--rule); background: var(--wash); overflow-wrap: anywhere; }
+
+h1,
+    h2,
+    h3,
+    p,
+    dl,
+    figure { margin-top: 0px; }
+
+h1,
+    h2,
+    h3 { text-wrap: balance; }
+
+.page { width: min(calc(100% - 2.5rem), var(--measure)); margin-inline: auto; }
+
+.skip-link { position: absolute; top: 0.75rem; left: 0.75rem; z-index: 20; padding: 0.7rem 1rem; color: var(--paper); background: var(--ink); transform: translateY(-180%); transition: transform 160ms ease; }
+
+.skip-link:focus { transform: translateY(0); }
+
+.site-header { border-bottom: 1px solid var(--rule); padding: 0.85rem 0px 0px; }
+
+.utility-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.65rem; }
+
+.eyebrow { display: flex; align-items: center; gap: 0.65rem; margin: 0; font-size: 0.73rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+
+.eyebrow-mark { display: inline-block; width: 0.75rem; height: 0.75rem; background: var(--accent); }
+
+.masthead-grid { padding: 1.25rem 0; }
+
+h1 { max-width: 32ch; font-size: clamp(2rem, 3.5cqi, 2.75rem); line-height: 1.1; letter-spacing: -0.045em; margin-bottom: 0.65rem; }
+
+h1 em { color: var(--accent); font-style: normal; }
+
+.lead { margin-bottom: 0px; font-size: 1rem; line-height: 1.5; }
+
+.reading-pane, .document-content { container-type: inline-size; }
+
+.topic-panel { --nav-line: color-mix(in srgb,var(--ink) 10%,transparent); --nav-hover: color-mix(in srgb,var(--ink) 5%,transparent); position: sticky; top: 0px; z-index: 10; padding: 0.5rem; border-bottom: 1px solid var(--nav-line); background: var(--paper); }
+
+.topic-toggle { display: flex; align-items: center; gap: 0.7rem; min-height: 2.75rem; padding: 0.55rem 0.75rem; border-radius: 0.65rem; cursor: pointer; font-size: 0.92rem; font-weight: 600; list-style: none; transition: background-color 160ms ease; }
+
+.topic-toggle::-webkit-details-marker { display: none; }
+
+.topic-toggle:hover { background: var(--nav-hover); }
+
+.topic-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+.topic-icon, .topic-close { display: grid; flex: 0 0 auto; place-items: center; color: var(--muted); }
+
+.topic-icon svg, .topic-close svg { width: 1.15rem; height: 1.15rem; }
+
+.topic-icon .panel-symbol { display: none; }
+
+.topic-label { min-width: 0px; overflow-wrap: anywhere; }
+
+.topic-close { width: 1.65rem; height: 1.65rem; margin-left: auto; border: 1px solid var(--nav-line); border-radius: 0.4rem; background: var(--surface); transition: transform 200ms ease; }
+
+.topic-panel[open] .topic-close { transform: rotate(180deg); }
+
+.topic-panel .toc { padding: 1.2rem 0.25rem 0.75rem; max-height: calc(100dvh - 5rem); overflow-y: auto; scrollbar-width: thin; }
+
+.topic-caption { margin: 0px 0.7rem 0.65rem; color: var(--muted); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+
+.toc ul { display: grid; gap: 0.15rem; margin: 0px; padding: 0px; list-style: none; }
+
+.toc li { min-width: 0px; }
+
+.toc a { display: flex; align-items: center; gap: 0.75rem; min-height: 2.75rem; padding: 0.65rem 0.7rem; border: 1px solid transparent; border-radius: 0.6rem; color: var(--muted); font-size: 0.9rem; line-height: 1.4; overflow-wrap: anywhere; text-decoration: none; transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; padding-block: 0.55rem; }
+
+.toc a > span:last-child { min-width: 0px; }
+
+.toc a::after { content: ""; flex: 0 0 0.3rem; height: 0.3rem; margin-left: auto; border-radius: 50%; background: currentcolor; opacity: 0; transition: opacity 160ms ease; }
+
+.toc a:hover { color: var(--ink); background: var(--nav-hover); }
+
+.toc a:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+.toc a[aria-current="location"] { color: var(--ink); background: var(--surface); border-color: var(--nav-line); font-weight: 600; box-shadow: 0 1px 3px rgb(0 0 0 / 4%); }
+
+.toc a[aria-current="location"]::after { opacity: 1; }
+
+.toc-number { flex: 0 0 auto; color: var(--muted); font-family: "Courier New", Courier, monospace; font-size: 0.7rem; font-weight: 400; }
+
+main section { scroll-margin-top: 5rem; }
+
+@media (min-width: 80rem) {
+  body:has(.topic-panel) { padding-left: 4.25rem; transition: padding-left 240ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+  body:has(.topic-panel[open]) { padding-left: 15.5rem; }
+  .topic-panel { position: fixed; inset: 0 auto 0 0; width: 4.25rem; padding: 1rem 0.5rem; border-right: 1px solid var(--nav-line); border-bottom: 0px; transition: width 240ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .topic-panel[open] { width: 15.5rem; }
+  .topic-panel .toc { max-height: calc(100dvh - 6rem); }
+  .topic-icon .menu-symbol { display: none; }
+  .topic-icon .panel-symbol { display: block; }
+  .topic-close { transform: rotate(-90deg); }
+  .topic-panel[open] .topic-close { transform: rotate(90deg); }
+  .topic-panel:not([open]) .topic-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .topic-panel:not([open]) .topic-close { display: none; }
+  .topic-panel:not([open]) .topic-toggle { justify-content: center; }
+  main section { scroll-margin-top: 1.5rem; }
+}
+
+@media (width < 80rem) {
+  .topic-panel .toc { position: absolute; top: 100%; left: 0px; right: 0px; padding: 1rem 0.75rem; border-bottom: 1px solid var(--nav-line); background: var(--paper); box-shadow: 0 10px 18px rgb(0 0 0 / 5%); }
+  .topic-panel[open] .toc { animation: topic-reveal 180ms ease-out; }
+}
+
+@keyframes topic-reveal { 0% { opacity: 0; transform: translateY(-4px); } 100% { opacity: 1; transform: translateY(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  body, body:has(.topic-panel), .topic-panel, .topic-toggle, .topic-close, .toc a, .toc a::after { transition: none; }
+  .topic-panel[open] .toc { animation: none; }
+}
+
+main > section { padding: 1.75rem 0; border-bottom: 1px solid var(--rule); }
+
+/* Direct builder sections and legacy section > .page share one measure. */
+main.page .page { width: 100%; }
+.document-content:has(> :first-child:not(section)) { padding-top: 1.25rem; }
+.document-intro { padding-block: 0; }
+.document-content > :first-child:not(section) { margin-bottom: 0; }
+main, main > section, figure, .reading-pane { min-width: 0; }
+h1, h2, h3, p, li, dd, td, th { overflow-wrap: anywhere; }
+main > section > :last-child { margin-bottom: 0; }
+
+/* Keep prose and rich blocks compact but clearly separated without styling their internals. */
+main > section > :where(p, ul, ol, dl, figure, aside, .table-frame, .definition, .steps, .deep-dive, .principle-grid, .takeaway) +
+  :where(p, ul, ol, dl, figure, aside, .table-frame, .definition, .steps, .deep-dive, .principle-grid, .takeaway) { margin-top: 1.25rem; }
+main > section > :where(p, ul, ol, dl, figure, aside, .table-frame, .definition, .steps, .deep-dive, .principle-grid, .takeaway) + h3 { margin-top: 2rem; }
+
+.section-kicker { display: flex; align-items: center; gap: 0.8rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem; }
+
+.section-number { display: inline-grid; width: 1.6rem; height: 1.6rem; place-items: center; border: 2px solid var(--line); border-radius: 50%; font-size: 0.75rem; }
+
+h2 { max-width: 36ch; font-size: clamp(1.5rem, 2.5cqi, 2rem); line-height: 1.08; letter-spacing: -0.045em; margin-bottom: 0.65rem; }
+
+/* Heading code is typography, not an inline data chip. */
+h2 code { padding: 0; border: 0; background: transparent; font-size: 0.88em; overflow-wrap: anywhere; }
+
+h3 { margin-bottom: 0.7rem; font-size: 1.25rem; line-height: 1.15; }
+
+.section-intro { margin-bottom: 0px; font-size: 1.05rem; line-height: 1.5; }
+
+.definition { color: var(--paper); background: var(--ink); box-shadow: none; padding: 1.25rem; }
+
+/* A definition becomes two-column only when it has the supported signal list. */
+.definition:has(> .signal-list) { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 1.5rem; max-width: none; }
+
+.definition > :last-child { margin-bottom: 0; }
+
+.definition-label { margin-bottom: 0.4rem; color: rgb(176, 176, 176); font-family: "Courier New", Courier, monospace; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.definition h2 { max-width: 36ch; color: var(--paper); }
+
+.definition .important { color: rgb(255, 255, 255); font-size: 1.05rem; font-weight: 700; line-height: 1.35; margin-bottom: 0.65rem; }
+
+.definition-detail { color: rgb(218, 218, 218); margin-bottom: 0px; }
+
+.signal-list { display: grid; grid-template-columns: 1fr; align-content: start; margin: 0px; padding-left: 1.25rem; border-left: 1px solid rgb(108, 108, 108); }
+
+.signal-list > div { padding: 0.6rem 0px; }
+
+.signal-list > div:first-child { padding-top: 0px; }
+
+.signal-list > div:last-child { padding-bottom: 0px; }
+
+.signal-list > div + div { border-top: 1px solid rgb(108, 108, 108); }
+
+.signal-list dt { margin-bottom: 0.3rem; color: rgb(176, 176, 176); font-family: "Courier New", Courier, monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.signal-list dd { margin: 0px; color: rgb(255, 255, 255); font-size: 1rem; line-height: 1.35; }
+
+.diagram { border: 1px solid var(--rule); background: var(--surface); margin: 1.25rem 0px 0px; padding: 1rem; }
+
+.diagram-topline { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.75rem; }
+
+.diagram-label,
+    .diagram-key { margin: 0px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.diagram-label { display: flex; align-items: center; gap: 0.55rem; }
+
+.live-dot { display: inline-block; width: 0.65rem; height: 0.65rem; border-radius: 50%; background: var(--accent); }
+
+.diagram-key { color: var(--muted); font-weight: 400; letter-spacing: 0px; text-transform: none; }
+
+.key-line { display: inline-block; width: 1.6rem; margin-right: 0.4rem; border-top: 2px solid var(--accent); vertical-align: middle; }
+
+.flow { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(3.5rem, 0.52fr) minmax(8rem, 1fr) minmax(3.5rem, 0.52fr) minmax(8rem, 1fr) minmax(3.5rem, 0.52fr) minmax(8rem, 1fr); gap: 0.75rem; align-items: stretch; padding: 1.25rem 0; }
+
+.node { min-width: 0px; border: 2px solid var(--line); background: var(--paper); padding: 1rem; }
+
+.node--dark { color: var(--paper); background: var(--ink); }
+
+.node-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1.25rem; }
+
+.node-index,
+    .node-role { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.node-index { color: var(--accent); }
+
+.node--dark .node-role { color: rgb(191, 191, 191); }
+
+.node--dark .node-index { color: rgb(255, 255, 255); }
+
+.node:not(.node--dark) .node-role { color: var(--muted); }
+
+.node h3 { margin-bottom: 0.55rem; font-size: 1.15rem; }
+
+.node p { margin: 0px; color: var(--muted); font-size: 1rem; line-height: 1.4; }
+
+.node--dark p { color: rgb(218, 218, 218); }
+
+.connector { display: grid; align-content: center; justify-items: center; gap: 0.55rem; min-width: 0px; }
+
+.connector-label { color: var(--teal); font-size: 0.67rem; font-weight: 700; letter-spacing: 0.08em; text-align: center; text-transform: uppercase; }
+
+.connector-arrow { position: relative; display: block; width: 100%; height: 0.75rem; color: var(--accent); }
+
+.connector-arrow::before { position: absolute; top: 50%; left: 0px; right: 2px; content: ""; border-top: 2px solid; transform: translateY(-50%); }
+
+.connector-arrow::after { position: absolute; top: 50%; right: 2px; width: 8px; height: 8px; content: ""; border-top: 2px solid; border-right: 2px solid; transform: translateY(-50%) rotate(45deg); }
+
+figcaption { padding-top: 1rem; border-top: 1px solid var(--rule); font-size: 1rem; }
+
+figcaption strong { margin-right: 0.35rem; }
+
+.note-strip { border-left: 3px solid var(--accent); background: var(--accent-soft); margin-top: 1.25rem; padding: 1rem; }
+
+/* Only a separate label followed by one complete paragraph opts into columns. */
+.note-strip:has(> strong:first-child + p:last-child) { display: grid; grid-template-columns: minmax(9rem, 0.45fr) minmax(0, 1.55fr); gap: 1.5rem; }
+
+.note-strip strong { margin-right: 0.25em; font-family: "Courier New", Courier, monospace; font-size: 0.78rem; text-transform: uppercase; }
+
+.note-strip p { margin: 0px; }
+
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); padding: 0px; border: 2px solid var(--line); list-style: none; margin: 1rem 0px 0px; }
+
+.steps li { min-width: 0px; padding: 0.85rem 1rem; }
+
+.steps li + li { border-left: 1px solid var(--rule); }
+
+.step-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.55rem; }
+
+.step-index,
+    .principle-index { color: var(--accent); font-weight: 700; line-height: 1; }
+
+.step-boundary { color: var(--muted); font-size: 0.67rem; font-weight: 700; letter-spacing: 0.08em; text-align: right; text-transform: uppercase; }
+
+.steps h3 { font-size: 1.05rem; margin-bottom: 0.45rem; }
+
+.steps p { margin: 0px; color: var(--muted); font-size: 1rem; }
+
+.deep-dive { border: 2px solid var(--line); background: var(--surface); margin-top: 1rem; }
+
+.deep-dive summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; font-weight: 700; list-style: none; padding: 0.8rem 1rem; }
+
+.deep-dive summary::-webkit-details-marker { display: none; }
+
+.deep-dive summary::after { content: "+"; color: var(--accent); font-family: "Courier New", Courier, monospace; font-size: 1.5rem; line-height: 1; }
+
+.deep-dive[open] summary { border-bottom: 1px solid var(--rule); }
+
+.deep-dive[open] summary::after { content: "−"; }
+
+.deep-dive-content { display: grid; grid-template-columns: minmax(9rem, 0.6fr) minmax(0, 1.4fr); gap: 1rem; padding: 1rem; }
+
+.deep-dive-content p { margin-bottom: 0px; }
+
+.deep-dive-label { font-family: "Courier New", Courier, monospace; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
+
+.table-frame { margin: 1.25rem 0; }
+
+.boundary-table { width: 100%; border-collapse: collapse; background: var(--surface); }
+
+.boundary-table caption { margin-bottom: 0.9rem; color: var(--muted); font-size: 0.92rem; text-align: left; }
+
+.boundary-table th,
+    .boundary-table td { padding: 0.75rem; border: 1px solid var(--rule); text-align: left; vertical-align: top; }
+
+.boundary-table th { color: var(--ink); background: var(--wash); font-family: "Courier New", Courier, monospace; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.boundary-table td { font-size: 1rem; }
+
+.boundary-table td:first-child { width: 20%; font-weight: 700; }
+
+.boundary-table td:nth-child(2) { width: 33%; }
+
+.principle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; }
+
+.principle { min-width: 0px; border-top: 3px solid var(--line); background: var(--surface); display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; align-items: baseline; gap: 0.55rem 0.65rem; padding: 0.85rem 1rem; }
+
+.principle-index { display: block; margin: 0px; font-size: 0.85rem; }
+
+.principle h3 { margin: 0px; font-size: 1.05rem; }
+
+.principle p:last-child { margin-bottom: 0px; color: var(--muted); }
+
+.takeaway { border: 3px solid var(--line); box-shadow: var(--shadow); margin-top: 1rem; padding: 1.1rem; }
+
+/* The labelled component retains its editorial split; plain conclusions use the full measure. */
+.takeaway:has(> .takeaway-label) { display: grid; grid-template-columns: minmax(8rem, 0.55fr) minmax(0, 1.45fr); gap: 1.5rem; align-items: start; }
+
+.takeaway-label { color: var(--teal); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.takeaway p { margin: 0px; font-size: 1.1rem; line-height: 1.4; }
+
+.site-footer { padding: 1.5rem 0 2rem; }
+
+.footer-grid { display: grid; grid-template-columns: 0.7fr 1.3fr; gap: 2rem; color: var(--muted); font-size: 0.88rem; }
+
+.footer-mark { margin: 0px; color: var(--ink); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.footer-grid p:last-child { margin: 0px; }
+
+.step-index { font-size: 1rem; }
+
+.principle p { grid-column: 1 / -1; }
+
+@container (max-width: 900px) {
+  .flow { grid-template-columns: minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr) minmax(2.75rem, 0.4fr) minmax(7rem, 1fr); gap: 0.45rem; }
+  .node-index,
+      .node-role { font-size: 0.6rem; }
+}
+
+@container (max-width: 720px) {
+  .page { width: min(calc(100% - 1.5rem), var(--measure)); }
+  .utility-row,
+      .diagram-topline { align-items: flex-start; flex-direction: column; }
+  .utility-row { gap: 0.55rem; }
+  .definition:has(> .signal-list),
+      .deep-dive-content,
+      .footer-grid { grid-template-columns: 1fr; }
+  .signal-list { padding: 1rem 0px 0px; border-left: 0px; border-top: 1px solid rgb(108, 108, 108); }
+  .flow { grid-template-columns: 1fr; gap: 0.5rem; padding: 1.5rem 0px; }
+  .connector { grid-template-columns: 2rem minmax(0, 1fr); grid-template-rows: 2rem; justify-items: start; justify-content: start; gap: 0.75rem; padding-left: 0.75rem; }
+  .connector-label { grid-column: 2; grid-row: 1; align-self: center; text-align: left; }
+  .connector-arrow { grid-column: 1; grid-row: 1; width: 2rem; height: 2rem; }
+  .connector-arrow::before { top: 0px; bottom: 2px; left: 50%; right: auto; border-top: 0px; border-left: 2px solid; transform: translateX(-50%); }
+  .connector-arrow::after { top: auto; bottom: 2px; left: 50%; right: auto; transform: translateX(-50%) rotate(135deg); }
+  .note-strip:has(> strong:first-child + p:last-child),
+      .takeaway:has(> .takeaway-label) { grid-template-columns: 1fr; gap: 0.7rem; }
+  .steps,
+      .principle-grid { grid-template-columns: 1fr; }
+  .steps li + li { border-top: 1px solid var(--rule); border-left: 0px; }
+  .step-top { margin-bottom: 0.55rem; }
+  .boundary-table thead { position: absolute; width: 1px; height: 1px; padding: 0px; margin: -1px; overflow: hidden; clip: rect(0px, 0px, 0px, 0px); white-space: nowrap; border: 0px; }
+  .boundary-table,
+      .boundary-table tbody,
+      .boundary-table tr,
+      .boundary-table td { display: block; width: 100%; }
+  .boundary-table tr { border: 1px solid var(--rule); }
+  .boundary-table tr + tr { margin-top: 1rem; }
+  .boundary-table td,
+      .boundary-table td:first-child,
+      .boundary-table td:nth-child(2) { display: grid; grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1.3fr); width: 100%; gap: 0.8rem; border: 0px; }
+  .boundary-table td + td { border-top: 1px solid var(--rule); }
+  .boundary-table td::before { content: attr(data-label); color: var(--muted); font-family: "Courier New", Courier, monospace; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .skip-link { transition: none; }
+}
+
+.table-frame { max-width: 100%; overflow-x: auto; }
+pre { max-width: 100%; overflow: auto; padding: 1rem; background: var(--wash); }
+pre code { padding: 0; border: 0; overflow-wrap: normal; }
+.definition code, .node--dark code { color: var(--ink); }
+.skip-link::selection, .skip-link ::selection { color: var(--ink); background: var(--paper); }
+:where([tabindex]):focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+figure.diagram-rendered { margin: 1.25rem 0; padding: 1rem; border: 1px solid var(--rule); background: var(--surface); }
+.diagram-viewport { max-width: 100%; min-width: 0; overflow: auto; padding: 0.25rem; margin-bottom: 1rem; }
+/* Preserve renderer dimensions: large diagrams scroll locally rather than shrinking labels. */
+.diagram-viewport > svg { display: block; max-width: none; flex-shrink: 0; margin-inline: auto; }
+main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
+.bpmn-attribution { position: relative; min-height: 3.25rem; margin-top: -0.5rem; }
+.diagram-status { margin: 0; padding: 0.75rem; border-left: 3px solid var(--line); color: var(--muted); font-size: 1rem; }
+[data-bpmn-state="pending"] { min-height: 8rem; }
+[data-bpmn-state="error"] .diagram-status { color: var(--ink); font-weight: 700; }
+.diagram-source { margin-top: 1rem; border-top: 1px solid var(--rule); }
+.diagram-source summary { padding-block: 0.75rem; cursor: pointer; font-weight: 700; }
+.diagram-source pre { margin: 0; font-size: 1rem; }
+
+@media print {
+  :root { --paper: #fff; --surface: #fff; --wash: #f2f2f2; }
+  body, body:has(.topic-panel), body:has(.topic-panel[open]) { font-size: 10pt; padding-left: 0px; transition: none; }
+  .reading-pane, .document-content { container-type: normal; }
+  .topic-panel { display: none; }
+  .skip-link,
+      .toc { display: none; }
+  .site-header { padding-top: 0px; }
+  .masthead-grid,
+      main section { padding-block: 1.5rem; }
+  .definition,
+      .takeaway { box-shadow: none; }
+  .flow { grid-template-columns: 1fr; }
+  .connector { min-height: 2rem; justify-items: start; grid-template-columns: 2rem 1fr; align-items: center; }
+  .connector-label { grid-column: 2; grid-row: 1; }
+  .connector-arrow { grid-column: 1; grid-row: 1; width: 2rem; transform: rotate(90deg); }
+  .diagram-viewport { overflow: visible; }
+  .diagram-viewport > svg { max-width: 100%; height: auto; }
+  .diagram-source { display: none; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow: visible; }
+  h2, h3, summary, figcaption { break-after: avoid; }
+  .node, .steps li, tr { break-inside: avoid; }
+  .definition, .node--dark, .boundary-table th { color: #191919; background: #fff; }
+  .definition :is(h2, p, dt, dd), .node--dark :is(p, .node-index, .node-role) { color: #191919; }
+  .table-frame { overflow: visible; }
+  .deep-dive:not(.diagram-source)::details-content { content-visibility: visible; display: block; }
+  .deep-dive .deep-dive-content { display: grid; }
+  a { text-decoration: none; }
+}
+
+/* Optional documentation components. Load after theme.css; no shell/layout rules. */
+.doc-facts {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(0, 3fr);
+  gap: 0;
+  margin-block: 1.25rem;
+  border-block: 1px solid var(--rule);
+}
+.doc-facts > dt,
+.doc-facts > dd { margin: 0; padding: 0.65rem 0.75rem; overflow-wrap: anywhere; }
+.doc-facts > dt { font-weight: 700; background: var(--wash); }
+.doc-facts > dt ~ dt,
+.doc-facts > dd ~ dd { border-top: 1px solid var(--rule); }
+
+.doc-scenario { margin-block: 1.25rem; padding-inline-start: 1rem; border-inline-start: 2px solid var(--line); }
+.doc-scenario > ol { padding-inline-start: 1.5rem; }
+.doc-scenario li + li { margin-top: 0.5rem; }
+.doc-alternatives { margin-block: 1.25rem; padding: 1rem; background: var(--wash); }
+.doc-alternatives > :last-child { margin-bottom: 0; }
+
+.doc-table-scroll { max-width: 100%; margin-block: 1.25rem; overflow-x: auto; }
+.doc-table-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.doc-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; line-height: 1.5; }
+.doc-table caption { padding-block: 0 0.6rem; text-align: start; font-weight: 700; }
+.doc-table th,
+.doc-table td { padding: 0.65rem 0.75rem; border: 1px solid var(--rule); text-align: start; vertical-align: top; overflow-wrap: anywhere; }
+.doc-table thead th { background: var(--wash); color: var(--ink); }
+.doc-table tbody th { font-weight: 700; }
+.doc-table td > :last-child { margin-bottom: 0; }
+
+.doc-criteria { padding-inline-start: 1.5rem; }
+.doc-criteria > li { margin-block: 0.75rem; padding-inline-start: 0.25rem; }
+.doc-criteria p { margin-block: 0.25rem 0; }
+.doc-payload { max-width: 100%; padding: 1rem; border: 1px solid var(--rule); background: var(--wash); white-space: pre-wrap; overflow-wrap: anywhere; }
+.doc-payload > code { padding: 0; border: 0; background: transparent; color: inherit; }
+.doc-change { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-block: 1.25rem; }
+.doc-change > div { min-width: 0; padding: 1rem; border: 1px solid var(--rule); }
+.doc-change h3 { padding-bottom: 0.5rem; border-bottom: 1px solid var(--rule); }
+.doc-change > div > :last-child { margin-bottom: 0; }
+
+@media (max-width: 40rem) {
+  .doc-facts { grid-template-columns: minmax(0, 1fr); }
+  .doc-facts > dd ~ dd { border-top: 0; }
+  .doc-facts > dt { padding-bottom: 0.35rem; }
+  .doc-facts > dd { padding-top: 0.35rem; }
+  .doc-change { grid-template-columns: minmax(0, 1fr); }
+  .doc-table th,
+  .doc-table td { padding: 0.5rem; }
+}
+@media print {
+  .doc-table-scroll { overflow: visible; }
+  .doc-table { font-size: 9pt; }
+  .doc-table thead { display: table-header-group; }
+  .doc-table tr { break-inside: avoid; }
+  .doc-payload { white-space: pre-wrap; }
+  .doc-change { grid-template-columns: minmax(0, 1fr); }
+}
+
+</style>
+</head><body class="layout-compact">
+<a class="skip-link" href="#main-content">Skip to content</a>
+<details class="topic-panel" id="topic-panel" open>
+<summary class="topic-toggle" aria-controls="topic-links" data-open-label="Open topics" data-close-label="Collapse topics"><span class="topic-icon" aria-hidden="true"><svg class="menu-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg><svg class="panel-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></span><span class="topic-label">Topics</span><span class="topic-close" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m8 10 4 4 4-4"/></svg></span></summary>
+<nav id="topic-links" class="toc" aria-label="Document sections"><p class="topic-caption">On this page</p><ul><li><a href="#catalog-1-reservation-contract"><span class="toc-number" aria-hidden="true">01</span><span>Reservation API and creation event</span></a></li>
+<li><a href="#catalog-2-reservation-change"><span class="toc-number" aria-hidden="true">02</span><span>From stock lookup to a timed hold</span></a></li>
+<li><a href="#catalog-3-reservation-open-points"><span class="toc-number" aria-hidden="true">03</span><span>Assumptions and unresolved questions</span></a></li>
+<li><a href="#catalog-4-reservation-comparison"><span class="toc-number" aria-hidden="true">04</span><span>A stock lookup and a reservation answer different questions</span></a></li>
+<li><a href="#catalog-5-reservation-conclusion"><span class="toc-number" aria-hidden="true">05</span><span>Keep the promise and its deadline together</span></a></li>
+<li><a href="#catalog-6-reservation-definition"><span class="toc-number" aria-hidden="true">06</span><span>A reservation is a temporary promise</span></a></li>
+<li><a href="#catalog-7-reservation-delivery-detail"><span class="toc-number" aria-hidden="true">07</span><span>Record the event with the hold</span></a></li>
+<li><a href="#catalog-8-reservation-vocabulary"><span class="toc-number" aria-hidden="true">08</span><span>Reservation vocabulary and stored data</span></a></li>
+<li><a href="#catalog-9-reservation-scope"><span class="toc-number" aria-hidden="true">09</span><span>What stock reservation covers</span></a></li>
+<li><a href="#catalog-10-reservation-mapping"><span class="toc-number" aria-hidden="true">10</span><span>Map checkout input to an inventory reservation</span></a></li>
+<li><a href="#catalog-11-reservation-native-flow"><span class="toc-number" aria-hidden="true">11</span><span>Trace the creation request across four boundaries</span></a></li>
+<li><a href="#catalog-12-reservation-retry-note"><span class="toc-number" aria-hidden="true">12</span><span>A timeout leaves the outcome unknown</span></a></li>
+<li><a href="#catalog-13-reservation-requirements"><span class="toc-number" aria-hidden="true">13</span><span>Observable reservation requirements</span></a></li>
+<li><a href="#catalog-14-reservation-rules"><span class="toc-number" aria-hidden="true">14</span><span>When may a hold be confirmed?</span></a></li>
+<li><a href="#catalog-15-reservation-scenario"><span class="toc-number" aria-hidden="true">15</span><span>Reserve two units during checkout</span></a></li>
+<li><a href="#catalog-16-reservation-steps"><span class="toc-number" aria-hidden="true">16</span><span>Follow a hold through its lifetime</span></a></li></ul></nav>
+</details>
+<div class="reading-pane">
+<header class="site-header"><div class="page masthead-grid"><h1>Documentation component catalog</h1><p class="lead">Reusable semantic HTML for explanations, business analysis and integration specifications. Choose components that answer the reader’s question; do not include every component in every document.</p></div></header>
+<main id="main-content" class="page document-content"><!-- Generated from assets/components/*.html by scripts/build-examples.mjs. -->
+<section id="catalog-1-reservation-contract" aria-labelledby="catalog-1-reservation-contract-heading"><p class="section-kicker">assets/components/api-event-contract.html</p>
+  <h2 id="catalog-1-reservation-contract-heading">Reservation API and creation event</h2>
+  <p>This illustrative contract separates a synchronous outcome from asynchronous delivery. Receiving an event is not required before checkout can use the API response.</p>
+  <h3>Create a hold · <code>POST /v1/reservations</code></h3>
+  <dl class="doc-facts">
+    <dt>Caller and authorization</dt><dd>Checkout uses a service access token with <code>inventory:reserve</code>. Inventory derives the owning client from the token, not from the JSON body.</dd>
+    <dt>Input</dt><dd><code>Content-Type: application/json</code>; required fields <code>sku</code> (nonempty case-sensitive string) and <code>quantity</code> (integer 1–100). Unknown fields are rejected.</dd>
+    <dt>Idempotency</dt><dd>Required <code>Idempotency-Key</code> is scoped to client and endpoint. Completed outcomes are retained for 24 hours. Identical retries replay the status and body; changed input returns <code>409 idempotency_conflict</code>. Concurrent duplicates wait for the first result.</dd>
+    <dt>Retry</dt><dd>On a lost response or a <code>503</code>, retry with the same key and payload using bounded exponential backoff. A replay does not renew the ten-minute hold; inspect its expiry before payment.</dd>
+  </dl>
+  <pre class="doc-payload"><code>{"sku":"SKU-42","quantity":2}</code></pre>
+  <div class="doc-table-scroll" role="region" aria-label="Create reservation responses" tabindex="0">
+    <table class="doc-table">
+      <caption>Response outcomes</caption>
+      <thead><tr><th scope="col">HTTP status</th><th scope="col">Meaning</th><th scope="col">Caller action</th></tr></thead>
+      <tbody>
+        <tr><th scope="row" data-label="HTTP status">201</th><td data-label="Meaning">Hold committed; body below.</td><td data-label="Caller action">Continue to payment before expiry.</td></tr>
+        <tr><th scope="row" data-label="HTTP status">400</th><td data-label="Meaning"><code>invalid_request</code>; malformed input or missing key.</td><td data-label="Caller action">Correct the request; do not retry unchanged.</td></tr>
+        <tr><th scope="row" data-label="HTTP status">401 / 403</th><td data-label="Meaning">Invalid credentials / missing scope.</td><td data-label="Caller action">Repair service authentication or permissions.</td></tr>
+        <tr><th scope="row" data-label="HTTP status">404</th><td data-label="Meaning"><code>unknown_sku</code>.</td><td data-label="Caller action">Refresh the basket item.</td></tr>
+        <tr><th scope="row" data-label="HTTP status">409</th><td data-label="Meaning"><code>insufficient_stock</code> or <code>idempotency_conflict</code>.</td><td data-label="Caller action">Reduce quantity or resolve key reuse; do not blindly retry.</td></tr>
+        <tr><th scope="row" data-label="HTTP status">503</th><td data-label="Meaning"><code>temporarily_unavailable</code>; outcome may be unknown to the caller.</td><td data-label="Caller action">Retry with the same key to discover the committed outcome.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Successful response:</p>
+  <pre class="doc-payload"><code>{"reservation_id":"rsv_1042","state":"active","expires_at":"2026-05-01T10:10:00Z"}</code></pre>
+  <p>Domain errors use a stable machine code and a human-readable message:</p>
+  <pre class="doc-payload"><code>{"code":"insufficient_stock","message":"Only one unit is available."}</code></pre>
+  <h3>Event · <code>inventory.reservation.created.v1</code></h3>
+  <dl class="doc-facts">
+    <dt>Producer → consumer</dt><dd>Inventory → checkout projection, through an authenticated broker topic restricted to these services.</dd>
+    <dt>Publication</dt><dd>The hold and outbox entry commit together. The publisher retries until the broker acknowledges delivery.</dd>
+    <dt>Delivery</dt><dd>At least once; duplicates and delayed messages are possible. Consumers deduplicate by <code>event_id</code> and must not treat a delayed creation event as proof the hold is still active.</dd>
+    <dt>Compatibility</dt><dd>Consumers tolerate unknown additive fields. Changing the meaning or type of existing fields requires a new event version.</dd>
+    <dt>Failure handling</dt><dd>After five failed consumer attempts, quarantine the message for inspection and replay with its original event ID; alert the checkout service owner.</dd>
+  </dl>
+  <pre class="doc-payload"><code>{
+  "event_id": "evt_8801",
+  "type": "inventory.reservation.created.v1",
+  "occurred_at": "2026-05-01T10:00:00Z",
+  "data": {
+    "reservation_id": "rsv_1042",
+    "sku": "SKU-42",
+    "quantity": 2,
+    "expires_at": "2026-05-01T10:10:00Z"
+  }
+}</code></pre>
+</section>
+
+<section id="catalog-2-reservation-change" aria-labelledby="catalog-2-reservation-change-heading"><p class="section-kicker">assets/components/as-is-to-be.html</p>
+  <h2 id="catalog-2-reservation-change-heading">From stock lookup to a timed hold</h2>
+  <p>This illustrative change closes the gap between showing availability and claiming stock. It introduces expiry and retry handling rather than making the checkout process disappear.</p>
+  <div class="doc-change">
+    <div>
+      <h3>AS-IS · Check without holding</h3>
+      <ol>
+        <li>Checkout reads available stock.</li>
+        <li>The customer authorizes payment.</li>
+        <li>Checkout requests allocation; another customer may have taken the last unit.</li>
+      </ol>
+      <p><strong>Failure:</strong> payment may need to be voided because the earlier availability check was not a promise.</p>
+    </div>
+    <div>
+      <h3>TO-BE · Hold before payment</h3>
+      <ol>
+        <li>Checkout obtains a ten-minute reservation.</li>
+        <li>The customer authorizes payment while the hold is active.</li>
+        <li>Checkout confirms the hold; if it expired, checkout voids the authorization and offers a retry.</li>
+      </ol>
+      <p><strong>Trade-off:</strong> abandoned holds temporarily reduce availability and require reliable release.</p>
+    </div>
+  </div>
+  <h3>Transition and observation</h3>
+  <p>Route a checkout through either the old path or the hold path, never both. Both paths must use the same authoritative available-stock calculation. Track confirmation conflicts, expired holds, and payment voids before expanding rollout.</p>
+  <p><strong>Rollback boundary:</strong> stop creating new holds but continue confirming or releasing existing holds until none remain. Simply switching off Inventory would strand reserved units.</p>
+</section>
+
+<section id="catalog-3-reservation-open-points" aria-labelledby="catalog-3-reservation-open-points-heading"><p class="section-kicker">assets/components/assumptions-questions.html</p>
+  <h2 id="catalog-3-reservation-open-points-heading">Assumptions and unresolved questions</h2>
+  <p>These example notes distinguish a working assumption from a decision. Owners are responsible for supplying evidence, not merely marking a row complete.</p>
+  <div class="doc-table-scroll" role="region" aria-label="Assumptions and questions register" tabindex="0">
+    <table class="doc-table">
+      <caption>Uncertainty that could change the reservation design</caption>
+      <thead><tr><th scope="col">ID / kind</th><th scope="col">Statement or question</th><th scope="col">Impact</th><th scope="col">Owner / next evidence</th></tr></thead>
+      <tbody>
+        <tr><th scope="row" data-label="ID / kind">A-01 · Assumption</th><td data-label="Statement or question">All sellable quantities are whole units.</td><td data-label="Impact">Weighted goods would require decimal quantity and unit-of-measure rules.</td><td data-label="Owner / next evidence">Catalog owner: check the active SKU export for weighted items before extending the API.</td></tr>
+        <tr><th scope="row" data-label="ID / kind">A-02 · Assumption</th><td data-label="Statement or question">Ten minutes is enough to complete payment authorization.</td><td data-label="Impact">Slow authorization could expire otherwise valid checkouts.</td><td data-label="Owner / next evidence">Payments owner: compare authorization duration and abandonment data; revisit the expiry policy if necessary.</td></tr>
+        <tr><th scope="row" data-label="ID / kind">Q-01 · Open question</th><td data-label="Statement or question">Should a checkout reserve all basket lines atomically?</td><td data-label="Impact">The current single-line API can leave a basket partially reserved.</td><td data-label="Owner / next evidence">Checkout owner: compare all-or-nothing and compensating-release scenarios with product operations.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Current boundary:</strong> this example documents single-line reservations only. It does not promise atomic reservation of a whole basket.</p>
+</section>
+
+<section id="catalog-4-reservation-comparison" aria-labelledby="catalog-4-reservation-comparison-heading"><p class="section-kicker">assets/components/comparison.html</p>
+  <h2 id="catalog-4-reservation-comparison-heading">A stock lookup and a reservation answer different questions</h2>
+  <div class="table-frame">
+    <table class="boundary-table">
+      <caption>Choose the operation by the promise the caller needs</caption>
+      <thead><tr><th scope="col">Dimension</th><th scope="col">Availability lookup</th><th scope="col">Reservation</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Dimension"><strong>Question</strong></td><td data-label="Availability lookup">How many units appear available now?</td><td data-label="Reservation">Can this checkout claim these units until its deadline?</td></tr>
+        <tr><td data-label="Dimension"><strong>State change</strong></td><td data-label="Availability lookup">None; another checkout may act immediately.</td><td data-label="Reservation">Creates a hold and reduces available stock.</td></tr>
+        <tr><td data-label="Dimension"><strong>Retry behavior</strong></td><td data-label="Availability lookup">Repeat the read; the value may have changed.</td><td data-label="Reservation">Reuse the idempotency key to avoid a second hold.</td></tr>
+        <tr><td data-label="Dimension"><strong>Use</strong></td><td data-label="Availability lookup">Inform browsing and product listings.</td><td data-label="Reservation">Protect the payment window during checkout.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="catalog-5-reservation-conclusion" aria-labelledby="catalog-5-reservation-conclusion-heading"><p class="section-kicker">assets/components/conclusions.html</p>
+  <h2 id="catalog-5-reservation-conclusion-heading">Keep the promise and its deadline together</h2>
+  <p>Use a lookup for information and a reservation for a temporary claim. Keep the reservation ID, expiry time, and retry key with the checkout attempt so recovery does not create a second claim.</p>
+  <div class="takeaway" role="note">
+    <span class="takeaway-label">Key conclusion</span>
+    <p><strong>A hold protects stock, not the whole purchase.</strong> Payment authorization, confirmation, and expiry still need explicit outcomes and recovery paths.</p>
+  </div>
+</section>
+
+<section id="catalog-6-reservation-definition" aria-labelledby="catalog-6-reservation-definition-heading"><p class="section-kicker">assets/components/definition.html</p>
+  <h2 id="catalog-6-reservation-definition-heading">A reservation is a temporary promise</h2>
+  <div class="definition">
+    <div>
+      <p class="important">A stock reservation temporarily removes units from what other checkouts may claim.</p>
+      <p class="definition-detail">It is not a completed sale. Confirmation turns the hold into an allocation; cancellation or expiry returns the units to availability. A payment authorization alone does not confirm the hold.</p>
+    </div>
+    <dl class="signal-list">
+      <div><dt>Claim</dt><dd>An item and a whole-unit quantity.</dd></div>
+      <div><dt>Deadline</dt><dd>Ten minutes from creation in this example.</dd></div>
+      <div><dt>Outcome</dt><dd>Confirmed allocation or released stock.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section id="catalog-7-reservation-delivery-detail" aria-labelledby="catalog-7-reservation-delivery-detail-heading"><p class="section-kicker">assets/components/details.html</p>
+  <h2 id="catalog-7-reservation-delivery-detail-heading">Record the event with the hold</h2>
+  <p>Inventory commits a reservation and an outbox entry in one transaction. A separate publisher sends the entry to the broker, so a broker outage need not roll back an already recorded hold.</p>
+  <details class="deep-dive">
+    <summary>Why can the same event still arrive twice?</summary>
+    <div class="deep-dive-content">
+      <p>The broker may accept an event just before the publisher loses its connection. Without an acknowledgement, the publisher cannot distinguish success from failure and sends it again.</p>
+      <p>The consumer records the event ID with its own state update and ignores a replay of that ID. This handles duplicate delivery; it does not guarantee that every consumer applies every event successfully.</p>
+    </div>
+  </details>
+</section>
+
+<section id="catalog-8-reservation-vocabulary" aria-labelledby="catalog-8-reservation-vocabulary-heading"><p class="section-kicker">assets/components/glossary-data-dictionary.html</p>
+  <h2 id="catalog-8-reservation-vocabulary-heading">Reservation vocabulary and stored data</h2>
+  <dl class="doc-facts">
+    <dt>Available stock</dt><dd>Units that can be promised now: on-hand units minus active holds and committed allocations.</dd>
+    <dt>Hold</dt><dd>A temporary claim on stock. In API names, a hold is called a reservation.</dd>
+    <dt>Allocation</dt><dd>A confirmed claim awaiting fulfillment; it no longer expires as a checkout hold.</dd>
+    <dt>Expiry</dt><dd>The instant after which an active hold cannot be confirmed, even if the cleanup worker has not run yet.</dd>
+  </dl>
+  <div class="doc-table-scroll" role="region" aria-label="Reservation data dictionary" tabindex="0">
+    <table class="doc-table">
+      <caption>Reservation record · owned by Inventory</caption>
+      <thead><tr><th scope="col">Field</th><th scope="col">Type / required</th><th scope="col">Meaning and constraints</th><th scope="col">Example</th></tr></thead>
+      <tbody>
+        <tr><th scope="row" data-label="Field"><code>reservation_id</code></th><td data-label="Type / required">String / yes</td><td data-label="Meaning and constraints">Opaque immutable identifier; consumers must not parse its prefix.</td><td data-label="Example"><code>rsv_1042</code></td></tr>
+        <tr><th scope="row" data-label="Field"><code>sku</code></th><td data-label="Type / required">String / yes</td><td data-label="Meaning and constraints">Case-sensitive inventory item identifier.</td><td data-label="Example"><code>SKU-42</code></td></tr>
+        <tr><th scope="row" data-label="Field"><code>quantity</code></th><td data-label="Type / required">Integer / yes</td><td data-label="Meaning and constraints">Whole units, from 1 through 100; never a decimal weight.</td><td data-label="Example">2</td></tr>
+        <tr><th scope="row" data-label="Field"><code>expires_at</code></th><td data-label="Type / required">RFC 3339 timestamp / yes</td><td data-label="Meaning and constraints">UTC creation time plus ten minutes. Retained for audit after confirmation.</td><td data-label="Example"><code>2026-05-01T10:10:00Z</code></td></tr>
+        <tr><th scope="row" data-label="Field"><code>state</code></th><td data-label="Type / required">Enum / yes</td><td data-label="Meaning and constraints">One of <code>active</code>, <code>confirmed</code>, <code>cancelled</code>, <code>expired</code>.</td><td data-label="Example"><code>active</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="catalog-9-reservation-scope" aria-labelledby="catalog-9-reservation-scope-heading"><p class="section-kicker">assets/components/goals-scope-actors.html</p>
+  <h2 id="catalog-9-reservation-scope-heading">What stock reservation covers</h2>
+  <p>This example service holds stock while a customer completes checkout. A reservation is not a payment or a shipping instruction.</p>
+  <dl class="doc-facts">
+    <dt>Goal</dt><dd>Prevent two checkouts from claiming the same available unit.</dd>
+    <dt>Success signal</dt><dd>Concurrent requests never reduce available stock below zero; rejected requests identify the unavailable item.</dd>
+    <dt>In scope</dt><dd>Create a ten-minute hold, confirm it after payment authorization, and release it on cancellation or expiry.</dd>
+    <dt>Out of scope</dt><dd>Payment capture, warehouse picking, and replenishment forecasts.</dd>
+  </dl>
+  <h3>Actors and responsibility boundaries</h3>
+  <div class="doc-table-scroll" role="region" aria-label="Reservation actors" tabindex="0">
+    <table class="doc-table">
+      <caption>Who requests, decides, and observes</caption>
+      <thead><tr><th scope="col">Actor</th><th scope="col">Responsibility</th><th scope="col">Boundary</th></tr></thead>
+      <tbody>
+        <tr><th scope="row" data-label="Actor">Customer</th><td data-label="Responsibility">Chooses quantity and completes checkout.</td><td data-label="Boundary">Cannot directly change stock balances.</td></tr>
+        <tr><th scope="row" data-label="Actor">Checkout service</th><td data-label="Responsibility">Requests and confirms a hold using an authenticated service identity.</td><td data-label="Boundary">Does not calculate warehouse availability.</td></tr>
+        <tr><th scope="row" data-label="Actor">Inventory service</th><td data-label="Responsibility">Atomically checks availability and owns reservation state.</td><td data-label="Boundary">Does not authorize payments.</td></tr>
+        <tr><th scope="row" data-label="Actor">Expiry worker</th><td data-label="Responsibility">Releases active holds whose deadline has passed.</td><td data-label="Boundary">Must not release confirmed reservations.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="catalog-10-reservation-mapping" aria-labelledby="catalog-10-reservation-mapping-heading"><p class="section-kicker">assets/components/mapping.html</p>
+  <h2 id="catalog-10-reservation-mapping-heading">Map checkout input to an inventory reservation</h2>
+  <p>The adapter accepts a single basket line per request. It validates the line before calling Inventory; it does not silently round quantities or substitute another item.</p>
+  <div class="doc-table-scroll" role="region" aria-label="Checkout to inventory field mapping" tabindex="0">
+    <table class="doc-table">
+      <caption>Source → target transformations and failure behavior</caption>
+      <thead><tr><th scope="col">Checkout source</th><th scope="col">Inventory target</th><th scope="col">Transformation</th><th scope="col">Missing or invalid input</th></tr></thead>
+      <tbody>
+        <tr><th scope="row" data-label="Checkout source"><code>line.productCode</code></th><td data-label="Inventory target"><code>sku</code></td><td data-label="Transformation">Copy unchanged, including case.</td><td data-label="Missing or invalid input">Reject an empty value; never trim into a different SKU.</td></tr>
+        <tr><th scope="row" data-label="Checkout source"><code>line.units</code></th><td data-label="Inventory target"><code>quantity</code></td><td data-label="Transformation">Accept an integer from 1 through 100.</td><td data-label="Missing or invalid input">Reject strings, fractions, zero, and negative numbers.</td></tr>
+        <tr><th scope="row" data-label="Checkout source"><code>attempt.id</code></th><td data-label="Inventory target"><code>Idempotency-Key</code> header</td><td data-label="Transformation">Reuse the attempt ID for retries of this exact line and quantity.</td><td data-label="Missing or invalid input">Stop if absent. A changed basket starts a new attempt.</td></tr>
+        <tr><th scope="row" data-label="Checkout source">Service identity</th><td data-label="Inventory target">Owning client</td><td data-label="Transformation">Inventory derives ownership from the access token.</td><td data-label="Missing or invalid input">Reject unauthenticated requests and any caller-supplied ownership field.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Worked example:</strong> <code>{"productCode":"SKU-42","units":2}</code> becomes <code>{"sku":"SKU-42","quantity":2}</code>. The attempt ID belongs in the header, not the JSON body.</p>
+</section>
+
+<section id="catalog-11-reservation-native-flow" aria-labelledby="catalog-11-reservation-native-flow-heading"><p class="section-kicker">assets/components/native-flow.html</p>
+  <h2 id="catalog-11-reservation-native-flow-heading">Trace the creation request across four boundaries</h2>
+  <figure class="diagram" aria-labelledby="catalog-11-reservation-native-caption">
+    <div class="flow">
+      <div class="node node--dark"><div class="node-meta"><span class="node-index">01</span><span class="node-role">Caller</span></div><h3>Checkout</h3><p>Requests two units with a retry key.</p></div>
+      <div class="connector"><span class="connector-label">create hold</span><span class="connector-arrow" aria-hidden="true"></span></div>
+      <div class="node"><div class="node-meta"><span class="node-index">02</span><span class="node-role">Owner</span></div><h3>Inventory</h3><p>Validates the request and controls the transaction.</p></div>
+      <div class="connector"><span class="connector-label">atomic commit</span><span class="connector-arrow" aria-hidden="true"></span></div>
+      <div class="node"><div class="node-meta"><span class="node-index">03</span><span class="node-role">Storage</span></div><h3>Database</h3><p>Stores the hold and its outbox entry together.</p></div>
+      <div class="connector"><span class="connector-label">pending entry</span><span class="connector-arrow" aria-hidden="true"></span></div>
+      <div class="node"><div class="node-meta"><span class="node-index">04</span><span class="node-role">Delivery</span></div><h3>Publisher</h3><p>Reads the outbox and sends the creation event to the broker.</p></div>
+    </div>
+    <figcaption id="catalog-11-reservation-native-caption">Read left to right: checkout requests a hold; Inventory commits it; a publisher later reads the recorded event. The API response returns after commit, without waiting for publication. This simplified flow omits rejection and retry branches.</figcaption>
+  </figure>
+</section>
+
+<section id="catalog-12-reservation-retry-note" aria-labelledby="catalog-12-reservation-retry-note-heading"><p class="section-kicker">assets/components/notes.html</p>
+  <h2 id="catalog-12-reservation-retry-note-heading">A timeout leaves the outcome unknown</h2>
+  <p>The database may commit a hold even if the response never reaches checkout. A network failure alone cannot tell the caller whether stock was reserved.</p>
+  <aside class="note-strip" aria-label="Retry caution">
+    <strong>Reuse the key.</strong>
+    <p>Retry the identical request with its original idempotency key. A new key asks for a new hold and can reserve the same basket twice.</p>
+  </aside>
+</section>
+
+<section id="catalog-13-reservation-requirements" aria-labelledby="catalog-13-reservation-requirements-heading"><p class="section-kicker">assets/components/requirements-acceptance.html</p>
+  <h2 id="catalog-13-reservation-requirements-heading">Observable reservation requirements</h2>
+  <p>These are example acceptance criteria, not evidence that an implementation has passed them.</p>
+  <h3>REQ-01 · Never over-allocate an item</h3>
+  <p>Creation must atomically check available stock and reserve the requested quantity.</p>
+  <ol class="doc-criteria">
+    <li><strong>AC-01 · Concurrent requests</strong><p><strong>Given</strong> one available unit and no active holds, <strong>when</strong> two distinct requests each reserve one unit concurrently, <strong>then</strong> exactly one succeeds, the other returns <code>409 insufficient_stock</code>, and available stock becomes zero.</p></li>
+    <li><strong>AC-02 · Rejected quantity</strong><p><strong>Given</strong> one available unit, <strong>when</strong> a request reserves two units, <strong>then</strong> no hold or creation event is recorded and available stock remains one.</p></li>
+  </ol>
+  <h3>REQ-02 · A retry must not create a second hold</h3>
+  <p>For 24 hours after the first completed request, an identical request from the same client with the same idempotency key returns its stored outcome.</p>
+  <ol class="doc-criteria" start="3">
+    <li><strong>AC-03 · Lost response</strong><p><strong>Given</strong> a committed hold whose response was lost, <strong>when</strong> checkout repeats the same request and key, <strong>then</strong> the response contains the same reservation ID and stock is not reduced again.</p></li>
+    <li><strong>AC-04 · Reused key, changed payload</strong><p><strong>Given</strong> a completed request, <strong>when</strong> its key is reused with a different quantity within 24 hours, <strong>then</strong> the service returns <code>409 idempotency_conflict</code> and leaves the original hold unchanged.</p></li>
+  </ol>
+</section>
+
+<section id="catalog-14-reservation-rules" aria-labelledby="catalog-14-reservation-rules-heading"><p class="section-kicker">assets/components/rules-decision-table.html</p>
+  <h2 id="catalog-14-reservation-rules-heading">When may a hold be confirmed?</h2>
+  <p>In this example, confirmation converts an active hold into a committed allocation. Inventory evaluates the rules in the listed order using its own clock and a locked reservation record.</p>
+  <div class="doc-table-scroll" role="region" aria-label="Confirmation decision rules" tabindex="0">
+    <table class="doc-table">
+      <caption>First matching row wins; a dash means the condition is irrelevant</caption>
+      <thead><tr><th scope="col">Rule</th><th scope="col">Caller owns hold?</th><th scope="col">State</th><th scope="col">Now before expiry?</th><th scope="col">Result</th></tr></thead>
+      <tbody>
+        <tr><th scope="row" data-label="Rule">BR-01</th><td data-label="Caller owns hold?">No</td><td data-label="State">Any</td><td data-label="Now before expiry?">—</td><td data-label="Result">Reject without exposing the hold's state.</td></tr>
+        <tr><th scope="row" data-label="Rule">BR-02</th><td data-label="Caller owns hold?">Yes</td><td data-label="State">Confirmed</td><td data-label="Now before expiry?">—</td><td data-label="Result">Return the existing confirmation; no new allocation.</td></tr>
+        <tr><th scope="row" data-label="Rule">BR-03</th><td data-label="Caller owns hold?">Yes</td><td data-label="State">Cancelled or expired</td><td data-label="Now before expiry?">—</td><td data-label="Result">Reject; a new reservation is required.</td></tr>
+        <tr><th scope="row" data-label="Rule">BR-04</th><td data-label="Caller owns hold?">Yes</td><td data-label="State">Active</td><td data-label="Now before expiry?">No</td><td data-label="Result">Expire and release the hold; reject confirmation.</td></tr>
+        <tr><th scope="row" data-label="Rule">BR-05</th><td data-label="Caller owns hold?">Yes</td><td data-label="State">Active</td><td data-label="Now before expiry?">Yes</td><td data-label="Result">Confirm once and record the allocation.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Boundary:</strong> at exactly <code>expires_at</code>, an active hold is expired. An already confirmed hold remains confirmed after that timestamp. Authentication and malformed requests are handled before this table.</p>
+</section>
+
+<section id="catalog-15-reservation-scenario" aria-labelledby="catalog-15-reservation-scenario-heading"><p class="section-kicker">assets/components/scenario.html</p>
+  <h2 id="catalog-15-reservation-scenario-heading">Reserve two units during checkout</h2>
+  <dl class="doc-facts">
+    <dt>Trigger</dt><dd>The customer proceeds from basket to payment.</dd>
+    <dt>Preconditions</dt><dd>The checkout service is authenticated; item SKU-42 exists; the requested quantity is two.</dd>
+    <dt>Success outcome</dt><dd>One active hold owns two units until confirmation, cancellation, or its ten-minute deadline.</dd>
+    <dt>Failure outcome</dt><dd>No partial hold is created. The checkout keeps the basket and explains the rejection.</dd>
+  </dl>
+  <div class="doc-scenario">
+    <h3>Main scenario</h3>
+    <ol>
+      <li>Checkout submits SKU-42, quantity 2, and a new idempotency key.</li>
+      <li>Inventory validates the request and checks stock inside the same transaction that creates the hold.</li>
+      <li>Inventory commits the hold and an outbox record for its creation event.</li>
+      <li>Inventory returns the reservation ID and expiry time. Checkout shows the payment step.</li>
+    </ol>
+  </div>
+  <div class="doc-alternatives">
+    <h3>Alternative paths</h3>
+    <dl class="doc-facts">
+      <dt>A1 · Step 2: insufficient stock</dt><dd>Inventory returns <code>409 insufficient_stock</code> without creating a hold. Checkout asks the customer to reduce the quantity; the scenario ends.</dd>
+      <dt>A2 · Step 4: response lost</dt><dd>Checkout repeats the identical request with the same key. Inventory returns the original result, not a second hold; resume at step 4.</dd>
+      <dt>A3 · Before payment: hold expires</dt><dd>Checkout requests a new hold before proceeding. If stock is no longer available, follow A1; the expired hold cannot be confirmed.</dd>
+    </dl>
+  </div>
+</section>
+
+<section id="catalog-16-reservation-steps" aria-labelledby="catalog-16-reservation-steps-heading"><p class="section-kicker">assets/components/steps.html</p>
+  <h2 id="catalog-16-reservation-steps-heading">Follow a hold through its lifetime</h2>
+  <ol class="steps">
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">01</span><span class="step-boundary">Checkout</span></div><h3>Request</h3><p>Send the item, quantity, and a stable key for retries.</p></li>
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">02</span><span class="step-boundary">Inventory</span></div><h3>Reserve</h3><p>Check stock and commit a hold in one transaction.</p></li>
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">03</span><span class="step-boundary">Checkout</span></div><h3>Confirm</h3><p>After payment authorization, confirm the still-active hold.</p></li>
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">04</span><span class="step-boundary">Inventory</span></div><h3>Release if unused</h3><p>Cancel or expire unconfirmed holds; confirmed allocations are not released by the expiry worker.</p></li>
+  </ol>
+</section>
+</main>
+<footer class="site-footer"><div class="page"><p class="footer-mark">Document / reference</p></div></footer>
+</div><script>
+/* Native details and anchors remain functional without this enhancement. */
+(() => {
+  const init = () => {
+    const panel = document.getElementById('topic-panel');
+    const toggle = panel?.querySelector('summary');
+    if (!toggle) return;
+    const wide = matchMedia('(min-width: 80rem)');
+    let desktopOpen = panel.open;
+    const syncLabel = () => {
+      const label = panel.open ? toggle.dataset.closeLabel : toggle.dataset.openLabel;
+      if (label) {
+        toggle.setAttribute('aria-label', label);
+        toggle.title = label;
+      }
+    };
+    const syncLayout = () => {
+      const hadFocus = panel.contains(document.activeElement);
+      panel.open = wide.matches && desktopOpen;
+      if (!panel.open && hadFocus) toggle.focus();
+      syncLabel();
+      schedule();
+    };
+    panel.addEventListener('toggle', syncLabel);
+    toggle.addEventListener('click', () => {
+      if (wide.matches) desktopOpen = !panel.open;
+    });
+    panel.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !panel.open) return;
+      event.preventDefault();
+      panel.open = false;
+      if (wide.matches) desktopOpen = false;
+      syncLabel();
+      toggle.focus();
+    });
+    const links = [...panel.querySelectorAll('a[href^="#"]')];
+    const targets = links.map(link => {
+      try { return document.getElementById(decodeURIComponent(link.hash.slice(1))); }
+      catch { return null; }
+    });
+    links.forEach((link, index) => {
+      link.addEventListener('click', event => {
+        const target = targets[index];
+        if (!target || event.defaultPrevented || event.button !== 0 ||
+            event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        if (!wide.matches) {
+          panel.open = false;
+          syncLabel();
+        }
+        // Keep native hash/history/scroll behavior, but move keyboard reading focus.
+        const temporary = !target.hasAttribute('tabindex');
+        if (temporary) target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+        if (temporary) target.addEventListener('blur', () => target.removeAttribute('tabindex'), { once: true });
+        schedule();
+      });
+    });
+    let scheduled = false;
+    const updateCurrent = () => {
+      scheduled = false;
+      const threshold = wide.matches ? 32 : toggle.getBoundingClientRect().bottom + 24;
+      let current = -1;
+      targets.forEach((target, index) => {
+        if (!target) return;
+        const margin = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+        if (target.getBoundingClientRect().top <= Math.max(threshold, margin + 2)) current = index;
+      });
+      const root = document.scrollingElement;
+      // A short final section may never reach the top-of-viewport threshold.
+      if (root && root.scrollTop > 0 && root.scrollTop + root.clientHeight >= root.scrollHeight - 2) {
+        current = targets.findLastIndex(target => target !== null);
+      }
+      links.forEach((link, index) => {
+        if (index === current) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    };
+    function schedule() {
+      if (!scheduled) {
+        scheduled = true;
+        requestAnimationFrame(updateCurrent);
+      }
+    }
+    wide.addEventListener('change', syncLayout);
+    addEventListener('scroll', schedule, { passive: true });
+    addEventListener('resize', schedule);
+    addEventListener('hashchange', schedule);
+    addEventListener('pageshow', schedule);
+    // Images, disclosure content and late fonts can change section positions.
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(schedule).observe(document.body);
+    syncLayout();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
+
+</script></body></html>

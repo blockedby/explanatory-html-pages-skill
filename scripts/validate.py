@@ -9,6 +9,7 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable
+from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "assets" / "explanatory-page-template.html"
@@ -116,7 +117,11 @@ def parse_html(path: Path, errors: list[str]) -> StrictHTMLParser | None:
     if not text:
         return None
 
-    check_markers(path, text, errors)
+    # Bundled renderer code/CSS is executable syntax, not unfinished author prose.
+    prose = re.sub(r"<(script|style)\b[^>]*>.*?</\1\s*>",
+                   lambda match: "\n" * match.group(0).count("\n"), text,
+                   flags=re.IGNORECASE | re.DOTALL)
+    check_markers(path, prose, errors)
     if not re.match(r"\s*<!doctype\s+html\s*>", text, re.IGNORECASE):
         errors.append(f"{display_path(path)}: missing HTML5 doctype")
 
@@ -199,6 +204,18 @@ def check_template(errors: list[str]) -> None:
         if attrs.get("href"):
             errors.append("assets/explanatory-page-template.html: external or local <link> breaks self-containment")
 
+    ids = [attrs["id"] for _, attrs in parser.elements if attrs.get("id")]
+    if len(ids) != len(set(ids)):
+        errors.append("assets/explanatory-page-template.html: IDs must be unique")
+    for tag, attrs in parser.elements:
+        href = attrs.get("href") or ""
+        if tag == "a" and href.startswith("#") and unquote(href[1:]) not in ids:
+            errors.append(f"assets/explanatory-page-template.html: missing anchor target {href}")
+        for attribute in ("aria-controls", "aria-labelledby"):
+            for target in (attrs.get(attribute) or "").split():
+                if target not in ids:
+                    errors.append(f"assets/explanatory-page-template.html: missing {attribute} target {target}")
+
     for attrs in elements(parser, "img"):
         if "alt" not in attrs:
             errors.append("assets/explanatory-page-template.html: every image needs an alt attribute")
@@ -233,21 +250,13 @@ def check_frontmatter(errors: list[str]) -> None:
     if not fields.get("description"):
         errors.append("SKILL.md: frontmatter description must not be empty")
 
-    required_phrases = (
-        "technical concept",
-        "available project context",
-        "optional visual constraints",
-        "self-contained explanatory html page",
-        "concise handoff",
-        "parse before handoff",
-        "mandatory web research",
-        "decorative landing-page generation",
-        "unnecessary browser testing",
-    )
-    lowered = text.lower()
-    for phrase in required_phrases:
-        if phrase not in lowered:
-            errors.append(f"SKILL.md: contract text is missing {phrase!r}")
+    # Validate runnable entry points and real local references, not a frozen essay.
+    for entry in ("scripts/document.mjs", "scripts/setup.mjs", "content.html", "document.json"):
+        if entry not in text:
+            errors.append(f"SKILL.md: missing authoring entry point {entry!r}")
+    for target in re.findall(r"\]\(([^)]+)\)", text):
+        if "://" not in target and not (ROOT / target.split("#", 1)[0]).is_file():
+            errors.append(f"SKILL.md: broken local reference {target}")
 
 
 def check_repository_files(errors: list[str]) -> None:
@@ -258,6 +267,18 @@ def check_repository_files(errors: list[str]) -> None:
         ".gitignore",
         "assets/explanatory-page-template.html",
         "scripts/validate.py",
+        "scripts/document.mjs",
+        "scripts/setup.mjs",
+        "assets/theme.css",
+        "assets/components.css",
+        "assets/navigation.js",
+        "assets/bpmn-runtime.js",
+        "package.json",
+        "package-lock.json",
+        "references/authoring.md",
+        "references/components.md",
+        "references/notations.md",
+        "references/rendering.md",
     )
     for relative in required:
         if not (ROOT / relative).is_file():
@@ -304,6 +325,21 @@ def main() -> int:
         check_repository_files(errors)
         check_frontmatter(errors)
         check_template(errors)
+        canonical = [read_text(ROOT / relative, errors) for relative in
+                     ("assets/theme.css", "assets/components.css", "assets/navigation.js")]
+        outputs = [TEMPLATE]
+        for name in ("technical-explainer", "business-process", "integration-spec", "component-catalog"):
+            path = ROOT / "examples" / f"{name}.html"
+            if not path.is_file():
+                errors.append(f"{display_path(path)}: built example is missing")
+                continue
+            parse_html(path, errors)
+            outputs.append(path)
+        for path in outputs:
+            html = read_text(path, errors)
+            for asset in canonical:
+                if asset and asset not in html:
+                    errors.append(f"{display_path(path)}: canonical asset drift; run npm run build:examples")
 
     if errors:
         print("Validation failed:", file=sys.stderr)

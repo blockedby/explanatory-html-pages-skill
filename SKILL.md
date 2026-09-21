@@ -1,99 +1,87 @@
 ---
 name: explanatory-html-pages
-description: Create self-contained explanatory HTML pages that make technical concepts clear through plain language, readable diagrams, and responsive editorial structure.
+description: Create polished, offline HTML documentation using a shared design system and local diagram renderers. Use for technical explainers, business analysis, process documentation, integration specifications, visual guides, and printable reference pages.
 ---
 
-# Explanatory HTML Pages
+# Explanatory HTML pages
 
-Build one page that helps a defined reader answer a concrete technical question. Favor clarity over decoration: the page should teach a model, not advertise a product.
+Use the toolkit to scaffold a document, author its content and diagram sources, and build one self-contained HTML file. **Do not recreate the CSS, navigation, page shell or renderer for each document.** This is one skill with reusable internals, not a collection of unrelated templates.
 
-## Contract
+Resolve every path below relative to this skill's directory, wherever it was installed. Node 22.12+ is required at authoring time. The reader needs only a browser.
 
-### Input
+## Working sequence
 
-- **Technical concept:** the system, term, mechanism, or workflow the reader needs to understand.
-- **Available project context:** supplied files, documentation, product conventions, terminology, and constraints that are already available.
-- **Audience:** what the reader knows, what they are trying to do, and the language level that will help them.
-- **Optional visual constraints:** brand rules, colors, type choices, viewport range, print needs, motion preferences, or required diagram style.
+1. Choose a useful structure from the user's question. Make reasonable content and notation choices without a compulsory interview or approval round. State consequential assumptions in the document; ask only when missing information prevents a useful result.
+2. Prepare local dependencies once, if not already installed:
+   ```sh
+   node /path/to/skill/scripts/setup.mjs
+   node /path/to/skill/scripts/document.mjs doctor
+   ```
+   Setup installs pinned production npm dependencies only; builds never download. Neither Java nor Chromium is needed. PlantUML renders in Node; BPMN renders from embedded JavaScript when the reader opens the HTML in an ordinary browser. For diagrams and platform limitations, read [rendering.md](references/rendering.md).
+3. Scaffold in a **new directory**:
+   ```sh
+   node /path/to/skill/scripts/document.mjs create /path/to/document \
+     --title "How order submission works" --lang en --preset integration
+   ```
+   Presets: `explainer`, `process`, `integration`. Interface languages: `en`, `ru`. The starter is editable example content, not a claim about the user's system. Replace it with the actual explanation.
+4. Edit `document.json`, `content.html`, and sources in `diagrams/`. Reuse snippets from `assets/components/`; consult [components.md](references/components.md) and [authoring.md](references/authoring.md). Do not add CSS or scripts to `content.html`.
+5. Build and inspect:
+   ```sh
+   node /path/to/skill/scripts/document.mjs build /path/to/document \
+     --out /path/to/document/report.html
+   ```
+   Open the result locally. Check wide/narrow screens, diagrams, navigation, keyboard focus and print. A successful build verifies structure/rendering, **not business correctness**.
+6. Deliver the HTML and keep the source directory available for editing. Each rendered diagram includes an expandable, downloadable source. No server is required to read the result.
 
-### Output
+Create refuses an existing directory. Build replaces only the explicitly named output, atomically after source validation, PlantUML rendering and BPMN preparation; it must not overwrite source files. Do not bypass errors with hand-authored renderer SVG or remote rendering services.
 
-- **A self-contained explanatory HTML page:** semantic HTML with inline CSS, readable diagrams, and no required network access. Add JavaScript or local assets only when they materially improve the explanation.
-- **A concise handoff:** the created path, chosen teaching structure, audience or language level, and any intentional dependencies. Include the parse result.
+## Author content, not a document framework
 
-## Default workflow
+`document.json` contains only `title`, optional `description`, and `lang`. `content.html` is ordinary semantic HTML: top-level sections with `h2` headings, paragraphs, lists, tables and selected components. The builder generates navigation from section headings. Supply stable section IDs when cross-references matter; missing IDs are generated, including Cyrillic headings. Use `data-nav-title` on a section for a shorter navigation label without shortening the visible heading.
 
-### 1. Start with the reader
+The title is the document's one `h1`. Start with the useful idea, not a decorative masthead or metadata block. Do not add audience/read-time/model labels unless specifically relevant. The shared compact monochrome theme controls typography, density, responsive navigation and print. Compact layout is **not** an instruction to shorten the reasoning.
 
-Use the request and immediately available context as the main specification. Identify the reader's next question, the actors and boundaries involved, and the one idea the page must make memorable. Ask one focused question only when a missing answer would materially change the explanation. Do not perform separate research or verification unless the user asks for it.
+Use the amount of explanation the subject needs:
 
-### 2. Choose a teaching structure
+- Establish the question, boundaries and terminology.
+- Explain causal relationships, not only list boxes or steps.
+- Trace a concrete scenario, including meaningful alternatives and failures.
+- Separate known rules from assumptions and open questions.
+- End with the practical consequence or conclusion.
 
-Choose only the sections that answer the reader's next questions. Useful patterns include:
+## Choose only the useful components
 
-- a direct definition for a new term;
-- a relationship graph for actors, boundaries, or data flow;
-- a before-and-after or filter view for a transformation;
-- a numbered sequence for a process;
-- an aligned table for meaningful differences or responsibilities;
-- a short rationale for why the design works this way;
-- source links only when supplied or explicitly requested.
+- **Technical explanation:** definition, native flow or UML sequence, steps, comparison, caveat, optional deep dive, conclusion.
+- **Business analysis:** goals and scope, actors, scenarios, rules and decision tables, requirements and acceptance criteria, glossary, assumptions/questions, AS-IS / TO-BE.
+- **Integration specification:** ownership, API/event contract, data dictionary, mapping, sequence, errors/retries/idempotency, observable acceptance criteria.
 
-Use progressive disclosure by default: orient the reader first, define the core idea, show the main model, unpack the mechanism, then reveal edge cases or deeper detail. Do not force a fixed page schema or add empty sections.
+These are options, not mandatory document outlines. A simple concept does not need a requirements matrix; a detailed integration should not be reduced to three attractive cards. Read the ready-built `examples/*.html` and editable sibling directories for complete examples. `examples/component-catalog.html` demonstrates the reusable markup.
 
-### 3. Compose the page
+## Pick the diagram for the question
 
-- Use a single `h1`, meaningful heading order, and semantic landmarks such as `header`, `nav`, `main`, `section`, `figure`, `figcaption`, lists, and tables where they match the content.
-- Write in plain language. Define necessary technical terms, keep one main idea per paragraph, and explain cause and effect directly. Use realistic copy, not authoring tokens or generic filler.
-- Keep meaningful diagram text in the document. Give nodes concrete names and short role labels. Make the meaning and direction of every arrow clear in visible text or a caption; do not rely on color alone.
-- Prefer readable HTML and CSS diagrams to flattened images. On narrow screens, recompose flows vertically and preserve the logical reading order rather than hiding overflow.
-- Use inline CSS and a restrained editorial system by default: strong ink-and-paper contrast, a purposeful accent, consistent spacing, readable line lengths, visible focus, and print treatment when the page may be saved or shared.
-- Respect supplied visual constraints. When none exist, avoid turning the explanation into a decorative landing page. Use motion only when it explains a state or relationship, and honor `prefers-reduced-motion`.
-- Remove unused sections and any unresolved sample markers before handoff. A finished page must stand on its own.
+Use [notations.md](references/notations.md) for selection guidance.
 
-The included `assets/explanatory-page-template.html` is a complete, dependency-free reference for this structure. Copy its patterns selectively; it is not a required schema.
+- Native flow markup: a short linear conceptual path, not a substitute for branching formal notation.
+- PlantUML: sequence, state, activity, use-case, component, deployment or entity relationships as appropriate.
+- BPMN 2.0 XML: business-process events, tasks, gateways, pools, lanes and message flows. It documents a process; this toolkit does not execute it.
 
-### 4. Parse before handoff
+Declare a source-backed figure in content:
 
-Parse the finished HTML and fix parse errors before reporting it. In this repository, the dependency-free check is:
-
-```sh
-python3 scripts/validate.py
+```html
+<figure data-diagram="plantuml" data-source="diagrams/exchange.puml">
+  <figcaption>Explain the relationship and the important exception.</figcaption>
+</figure>
 ```
 
-When validating a page elsewhere, use the project's equivalent parser or a standard-library HTML parser. Parsing is the required default check; do not substitute a screenshot, browser run, link check, or factual review unless the request calls for one.
+For BPMN use `data-diagram="bpmn"` and a `.bpmn` source. Paths stay inside the document directory. PlantUML SVG is rendered/sanitized during the build. BPMN XML is validated/laid out in Node, retained as escaped text, and rendered/sanitized by an embedded viewer in the reader's browser. Both paths isolate SVG IDs; neither uses a CDN. BPMN requires reader JavaScript: keep the visible no-JS/error fallback and source downloads. Wait for BPMN diagrams before printing; automated exports can await `window.bpmnDiagramsReady`. Preserve notation semantics; use text to explain what the diagram leaves out. Missing-DI BPMN auto-layout has explicit limits: use supplied DI for advanced models, rather than silently dropping unsupported elements. Never upload private diagram sources to a public service.
 
-### 5. Hand off briefly
+## Reuse and maintenance
 
-Use this shape unless the caller requests another format:
+- `assets/theme.css`, `assets/navigation.js`: canonical shell styling and behavior.
+- `assets/components.css`, `assets/components/*.html`: optional component styling and copyable markup.
+- `assets/starters/`: source-only presets.
+- `scripts/document.mjs`: create/build/doctor entry point.
+- `scripts/renderers/`: local rendering and safe embedding.
+- `assets/explanatory-page-template.html`: generated standalone reference, **not** a second styling source to fork.
 
-```text
-Created: <page path>
-Structure: <definition, graph, sequence, comparison, or other selected pattern>
-Audience: <language level and reader>
-Dependencies: <none, or intentional dependencies>
-Validation: HTML parsed successfully
-```
-
-Keep the handoff concise. The page should carry the explanation.
-
-## Quality bar
-
-Before handoff, confirm that:
-
-- the opening tells the reader what they will understand;
-- the definition is direct before detail appears;
-- each visual relationship is also understandable from text and caption content;
-- later sections add depth instead of repeating the lead;
-- responsive layout changes preserve reading order, required content, and usable line lengths;
-- focus and contrast remain visible, and status or role is not communicated by color alone;
-- no external font, script, image, or stylesheet is required unless it is intentional and disclosed;
-- the page parses cleanly and contains no unresolved authoring markers.
-
-## Non-goals
-
-- Mandatory web research or external fact gathering.
-- Decorative landing-page generation without a teaching purpose.
-- Forcing every concept into the same collection of sections.
-- Adding JavaScript, a framework, a build step, or remote assets when HTML and CSS are enough.
-- Unnecessary browser testing, screenshot collection, or rendering work when the request only requires a parsed standalone page.
+For a document-specific need, first combine existing components and ordinary semantic HTML. Change the shared toolkit only when the design system itself needs a reusable improvement, not as a routine step in producing a page.

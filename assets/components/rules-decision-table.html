@@ -1,0 +1,18 @@
+<section id="reservation-rules">
+  <h2>When may a hold be confirmed?</h2>
+  <p>In this example, confirmation converts an active hold into a committed allocation. Inventory evaluates the rules in the listed order using its own clock and a locked reservation record.</p>
+  <div class="doc-table-scroll" role="region" aria-label="Confirmation decision rules" tabindex="0">
+    <table class="doc-table">
+      <caption>First matching row wins; a dash means the condition is irrelevant</caption>
+      <thead><tr><th scope="col">Rule</th><th scope="col">Caller owns hold?</th><th scope="col">State</th><th scope="col">Now before expiry?</th><th scope="col">Result</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">BR-01</th><td>No</td><td>Any</td><td>—</td><td>Reject without exposing the hold's state.</td></tr>
+        <tr><th scope="row">BR-02</th><td>Yes</td><td>Confirmed</td><td>—</td><td>Return the existing confirmation; no new allocation.</td></tr>
+        <tr><th scope="row">BR-03</th><td>Yes</td><td>Cancelled or expired</td><td>—</td><td>Reject; a new reservation is required.</td></tr>
+        <tr><th scope="row">BR-04</th><td>Yes</td><td>Active</td><td>No</td><td>Expire and release the hold; reject confirmation.</td></tr>
+        <tr><th scope="row">BR-05</th><td>Yes</td><td>Active</td><td>Yes</td><td>Confirm once and record the allocation.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Boundary:</strong> at exactly <code>expires_at</code>, an active hold is expired. An already confirmed hold remains confirmed after that timestamp. Authentication and malformed requests are handled before this table.</p>
+</section>

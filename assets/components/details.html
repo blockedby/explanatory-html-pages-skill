@@ -1,0 +1,11 @@
+<section id="reservation-delivery-detail">
+  <h2>Record the event with the hold</h2>
+  <p>Inventory commits a reservation and an outbox entry in one transaction. A separate publisher sends the entry to the broker, so a broker outage need not roll back an already recorded hold.</p>
+  <details class="deep-dive">
+    <summary>Why can the same event still arrive twice?</summary>
+    <div class="deep-dive-content">
+      <p>The broker may accept an event just before the publisher loses its connection. Without an acknowledgement, the publisher cannot distinguish success from failure and sends it again.</p>
+      <p>The consumer records the event ID with its own state update and ignores a replay of that ID. This handles duplicate delivery; it does not guarantee that every consumer applies every event successfully.</p>
+    </div>
+  </details>
+</section>

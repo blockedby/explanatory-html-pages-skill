@@ -1,0 +1,5 @@
+{
+  "title": "Order submission and fulfilment events",
+  "description": "An illustrative integration contract covering ownership, validation, idempotency, event delivery and recovery—not only the happy-path API call.",
+  "lang": "en"
+}

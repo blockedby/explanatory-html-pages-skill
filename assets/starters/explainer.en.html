@@ -1,0 +1,10 @@
+<section id="overview">
+  <h2>Start with the boundary</h2>
+  <p>A service accepts a request, checks whether the action is allowed, and returns a result. Separating these responsibilities makes failures easier to explain: an unavailable dependency is not the same thing as a rejected request.</p>
+  <div class="note-strip"><strong>Working model</strong><p>Follow one request from its caller to the owner of the data. Add another component only when it changes the explanation.</p></div>
+</section>
+<section id="mechanism">
+  <h2>Trace one complete exchange</h2>
+  <ol><li>The caller sends the information required for the action.</li><li>The service validates the request and applies the relevant rules.</li><li>The service returns a result that distinguishes success from rejection or temporary failure.</li></ol>
+  <details class="deep-dive"><summary>Where this model stops</summary><div class="deep-dive-content"><p>Retries, asynchronous work and partial failures require additional rules. Describe them when they affect the reader's question, rather than treating every system as one identical request path.</p></div></details>
+</section>

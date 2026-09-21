@@ -1,0 +1,8 @@
+<section id="reservation-retry-note">
+  <h2>A timeout leaves the outcome unknown</h2>
+  <p>The database may commit a hold even if the response never reaches checkout. A network failure alone cannot tell the caller whether stock was reserved.</p>
+  <aside class="note-strip" aria-label="Retry caution">
+    <strong>Reuse the key.</strong>
+    <p>Retry the identical request with its original idempotency key. A new key asks for a new hold and can reserve the same basket twice.</p>
+  </aside>
+</section>

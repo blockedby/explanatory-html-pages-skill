@@ -1,0 +1,11 @@
+@startuml
+start
+:Receive request;
+if (Valid request?) then (yes)
+  :Save order;
+  :Send confirmation;
+else (no)
+  :Return validation errors;
+endif
+stop
+@enduml

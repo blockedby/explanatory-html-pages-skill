@@ -1,0 +1,22 @@
+<section id="reservation-vocabulary">
+  <h2>Reservation vocabulary and stored data</h2>
+  <dl class="doc-facts">
+    <dt>Available stock</dt><dd>Units that can be promised now: on-hand units minus active holds and committed allocations.</dd>
+    <dt>Hold</dt><dd>A temporary claim on stock. In API names, a hold is called a reservation.</dd>
+    <dt>Allocation</dt><dd>A confirmed claim awaiting fulfillment; it no longer expires as a checkout hold.</dd>
+    <dt>Expiry</dt><dd>The instant after which an active hold cannot be confirmed, even if the cleanup worker has not run yet.</dd>
+  </dl>
+  <div class="doc-table-scroll" role="region" aria-label="Reservation data dictionary" tabindex="0">
+    <table class="doc-table">
+      <caption>Reservation record · owned by Inventory</caption>
+      <thead><tr><th scope="col">Field</th><th scope="col">Type / required</th><th scope="col">Meaning and constraints</th><th scope="col">Example</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><code>reservation_id</code></th><td>String / yes</td><td>Opaque immutable identifier; consumers must not parse its prefix.</td><td><code>rsv_1042</code></td></tr>
+        <tr><th scope="row"><code>sku</code></th><td>String / yes</td><td>Case-sensitive inventory item identifier.</td><td><code>SKU-42</code></td></tr>
+        <tr><th scope="row"><code>quantity</code></th><td>Integer / yes</td><td>Whole units, from 1 through 100; never a decimal weight.</td><td>2</td></tr>
+        <tr><th scope="row"><code>expires_at</code></th><td>RFC 3339 timestamp / yes</td><td>UTC creation time plus ten minutes. Retained for audit after confirmation.</td><td><code>2026-05-01T10:10:00Z</code></td></tr>
+        <tr><th scope="row"><code>state</code></th><td>Enum / yes</td><td>One of <code>active</code>, <code>confirmed</code>, <code>cancelled</code>, <code>expired</code>.</td><td><code>active</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>

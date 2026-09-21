@@ -1,0 +1,16 @@
+<section id="reservation-open-points">
+  <h2>Assumptions and unresolved questions</h2>
+  <p>These example notes distinguish a working assumption from a decision. Owners are responsible for supplying evidence, not merely marking a row complete.</p>
+  <div class="doc-table-scroll" role="region" aria-label="Assumptions and questions register" tabindex="0">
+    <table class="doc-table">
+      <caption>Uncertainty that could change the reservation design</caption>
+      <thead><tr><th scope="col">ID / kind</th><th scope="col">Statement or question</th><th scope="col">Impact</th><th scope="col">Owner / next evidence</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">A-01 · Assumption</th><td>All sellable quantities are whole units.</td><td>Weighted goods would require decimal quantity and unit-of-measure rules.</td><td>Catalog owner: check the active SKU export for weighted items before extending the API.</td></tr>
+        <tr><th scope="row">A-02 · Assumption</th><td>Ten minutes is enough to complete payment authorization.</td><td>Slow authorization could expire otherwise valid checkouts.</td><td>Payments owner: compare authorization duration and abandonment data; revisit the expiry policy if necessary.</td></tr>
+        <tr><th scope="row">Q-01 · Open question</th><td>Should a checkout reserve all basket lines atomically?</td><td>The current single-line API can leave a basket partially reserved.</td><td>Checkout owner: compare all-or-nothing and compensating-release scenarios with product operations.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Current boundary:</strong> this example documents single-line reservations only. It does not promise atomic reservation of a whole basket.</p>
+</section>

@@ -1,0 +1,9 @@
+<section id="reservation-steps">
+  <h2>Follow a hold through its lifetime</h2>
+  <ol class="steps">
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">01</span><span class="step-boundary">Checkout</span></div><h3>Request</h3><p>Send the item, quantity, and a stable key for retries.</p></li>
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">02</span><span class="step-boundary">Inventory</span></div><h3>Reserve</h3><p>Check stock and commit a hold in one transaction.</p></li>
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">03</span><span class="step-boundary">Checkout</span></div><h3>Confirm</h3><p>After payment authorization, confirm the still-active hold.</p></li>
+    <li><div class="step-top"><span class="step-index" aria-hidden="true">04</span><span class="step-boundary">Inventory</span></div><h3>Release if unused</h3><p>Cancel or expire unconfirmed holds; confirmed allocations are not released by the expiry worker.</p></li>
+  </ol>
+</section>

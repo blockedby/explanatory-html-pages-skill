@@ -1,0 +1,27 @@
+<section id="reservation-change">
+  <h2>From stock lookup to a timed hold</h2>
+  <p>This illustrative change closes the gap between showing availability and claiming stock. It introduces expiry and retry handling rather than making the checkout process disappear.</p>
+  <div class="doc-change">
+    <div>
+      <h3>AS-IS · Check without holding</h3>
+      <ol>
+        <li>Checkout reads available stock.</li>
+        <li>The customer authorizes payment.</li>
+        <li>Checkout requests allocation; another customer may have taken the last unit.</li>
+      </ol>
+      <p><strong>Failure:</strong> payment may need to be voided because the earlier availability check was not a promise.</p>
+    </div>
+    <div>
+      <h3>TO-BE · Hold before payment</h3>
+      <ol>
+        <li>Checkout obtains a ten-minute reservation.</li>
+        <li>The customer authorizes payment while the hold is active.</li>
+        <li>Checkout confirms the hold; if it expired, checkout voids the authorization and offers a retry.</li>
+      </ol>
+      <p><strong>Trade-off:</strong> abandoned holds temporarily reduce availability and require reliable release.</p>
+    </div>
+  </div>
+  <h3>Transition and observation</h3>
+  <p>Route a checkout through either the old path or the hold path, never both. Both paths must use the same authoritative available-stock calculation. Track confirmation conflicts, expired holds, and payment voids before expanding rollout.</p>
+  <p><strong>Rollback boundary:</strong> stop creating new holds but continue confirming or releasing existing holds until none remain. Simply switching off Inventory would strand reserved units.</p>
+</section>

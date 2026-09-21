@@ -1,0 +1,13 @@
+@startuml
+participant Client
+participant API
+database Store
+Client -> API: POST /orders + Idempotency-Key
+alt Invalid request
+  API --> Client: 422: explain invalid fields
+else Valid request
+  API -> Store: Save order and key atomically
+  Store --> API: Order ID
+  API --> Client: 201: order ID
+end
+@enduml

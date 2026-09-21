@@ -1,0 +1,15 @@
+<section id="reservation-comparison">
+  <h2>A stock lookup and a reservation answer different questions</h2>
+  <div class="table-frame">
+    <table class="boundary-table">
+      <caption>Choose the operation by the promise the caller needs</caption>
+      <thead><tr><th scope="col">Dimension</th><th scope="col">Availability lookup</th><th scope="col">Reservation</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Dimension"><strong>Question</strong></td><td data-label="Availability lookup">How many units appear available now?</td><td data-label="Reservation">Can this checkout claim these units until its deadline?</td></tr>
+        <tr><td data-label="Dimension"><strong>State change</strong></td><td data-label="Availability lookup">None; another checkout may act immediately.</td><td data-label="Reservation">Creates a hold and reduces available stock.</td></tr>
+        <tr><td data-label="Dimension"><strong>Retry behavior</strong></td><td data-label="Availability lookup">Repeat the read; the value may have changed.</td><td data-label="Reservation">Reuse the idempotency key to avoid a second hold.</td></tr>
+        <tr><td data-label="Dimension"><strong>Use</strong></td><td data-label="Availability lookup">Inform browsing and product listings.</td><td data-label="Reservation">Protect the payment window during checkout.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>

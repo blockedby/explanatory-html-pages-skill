@@ -1,0 +1,14 @@
+@startuml
+entity Customer {
+  * customer_id : UUID <<PK>>
+  --
+  name : text
+}
+entity Purchase {
+  * purchase_id : UUID <<PK>>
+  --
+  * customer_id : UUID <<FK>>
+  created_at : timestamp
+}
+Customer ||--o{ Purchase : places
+@enduml

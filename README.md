@@ -1,49 +1,101 @@
-# explanatory-html-pages
+# Explanatory HTML pages
 
-A standalone, `skills.sh`-compatible skill for turning a technical concept into a clear explanatory HTML page. It favors reader-first teaching, semantic structure, readable diagrams, responsive composition, and a short handoff over decoration.
+One reusable documentation design-system skill for technical explanations, business analysis, process documentation and integration specifications.
 
-## Install
+**Scaffold → author content and diagram sources → build offline HTML.** Agents do not need to recreate CSS, navigation or diagrams by hand for each document.
 
-Install the skill with the public repository path:
+## Install the skill
 
 ```sh
 npx skills add blockedby/explanatory-html-pages-skill
 ```
 
-The installed skill accepts a concept, the project context already available to the agent, an audience, and optional visual constraints.
+The repository is one skills.sh-compatible skill rooted at `SKILL.md`. Resolve the commands below from the installed skill directory, not from the document workspace.
 
-## What it produces
+## Quick start
 
-- One self-contained HTML page with inline CSS and meaningful content in the document.
-- A teaching structure chosen for the concept: definition, relationship graph, transformation, process, comparison, rationale, or a focused combination.
-- Responsive diagrams that become a readable vertical sequence on narrow screens.
-- A concise handoff naming the page path, structure, audience, dependencies, and HTML parse result.
-
-The skill does not require web research, a browser run, a framework, a build step, or remote assets. Those may be introduced only when the request makes them useful and intentional.
-
-## Included reference asset
-
-`assets/explanatory-page-template.html` is a complete, dependency-free sample page about the path of a web request. It demonstrates progressive disclosure, a definition panel, an HTML/CSS flow diagram, a numbered sequence, a responsive table, accessible focus states, reduced motion, and print rules. Copy the structure selectively and keep only the sections that teach the chosen concept.
-
-## Validate locally
-
-The repository includes a standard-library-only validator for the skill contract and reference asset:
+Authoring needs Node 22.12+. Prepare the local toolkit once:
 
 ```sh
-python3 scripts/validate.py
+node /path/to/skill/scripts/setup.mjs
+node /path/to/skill/scripts/document.mjs doctor
 ```
 
-It checks frontmatter, required repository files, unresolved authoring markers, semantic HTML landmarks, required metadata, tag nesting, and accidental external dependencies in the reference page. It exits non-zero when a check fails.
+Then create a source directory and build:
 
-## Repository layout
+```sh
+node /path/to/skill/scripts/document.mjs create ./order-guide \
+  --title 'How order acceptance works' --lang en --preset integration
 
-```text
-SKILL.md                              Skill instructions and contract
-assets/explanatory-page-template.html  Reusable standalone HTML reference
-scripts/validate.py                   Dependency-free validation
-LICENSE                               MIT license
+# Edit order-guide/content.html, document.json, and diagrams/*.puml or *.bpmn.
+
+node /path/to/skill/scripts/document.mjs build ./order-guide \
+  --out ./order-guide/report.html
 ```
+
+Open `report.html` directly in an ordinary browser. Theme, navigation, PlantUML SVG, BPMN sources and its browser renderer are embedded—no server, extra installation, CDN or internet connection. BPMN appears after local JavaScript rendering; without JavaScript its source and an explanatory fallback remain available. Wait for diagrams before printing. Editable sources are downloadable from the document.
+
+- Presets: `explainer`, `process`, `integration`.
+- Shell languages: English and Russian; content and labels are authored normally.
+- Create refuses existing directories. Build requires an explicit output and preserves the previous HTML on failure.
+- Default setup (or `setup.mjs --npm`) installs only authoring npm dependencies. No Java/JRE or Chromium is needed for any document build.
+
+## What is reusable
+
+| Layer | Purpose |
+| --- | --- |
+| `assets/theme.css`, `assets/navigation.js` | Compact monochrome typography, layout, collapsible desktop topics, mobile disclosure, keyboard/focus, reduced motion and print |
+| `assets/components.css`, `assets/components/` | Definitions, steps, comparisons, notes, scenarios, scope, actors, rules, requirements, contracts, mappings and analysis tables |
+| `assets/starters/` | Plain semantic HTML and editable diagram sources; no bespoke document DSL |
+| `scripts/document.mjs` | Scaffold, validation, generated navigation and atomic standalone build |
+| `scripts/renderers/` | Local PlantUML rendering, browser-free BPMN preparation and safe SVG embedding |
+| `assets/bpmn-runtime.js` | Offline reader-browser BPMN rendering, SVG isolation and loading/error states |
+
+Compact presentation does not mean shallow explanation. Components are choices, not a checklist that every document must contain. The skill chooses a useful structure and notation without compulsory interviews or approval gates.
+
+## Complete examples
+
+Each HTML file has a sibling source directory with metadata, content and diagram sources:
+
+- [Technical explainer](examples/technical-explainer.html) — Russian request-boundary explanation, sequence diagram, failure analysis and optional depth.
+- [Business process](examples/business-process.html) — expense-review scope, roles, BPMN branching, rules and acceptance criteria.
+- [Integration specification](examples/integration-spec.html) — API/event contracts, idempotency, outbox sequence, mapping and recovery.
+- [Component catalog](examples/component-catalog.html) — all reusable semantic snippets in the shared shell.
+
+Download or open HTML locally; GitHub's file viewer displays source. `assets/explanatory-page-template.html` is a generated standalone reference, not an alternative CSS source to fork.
+
+## Diagram choices and limits
+
+Use native markup for short conceptual flows, PlantUML for UML/technical relationships, and actual BPMN 2.0 XML for business-process notation. PlantUML renders at build time; BPMN renders in the reader's browser from its embedded production viewer. Private sources never go to public diagram services. No editor or process engine is embedded.
+
+Simple missing-DI BPMN processes can be auto-laid out. Advanced collaborations, lanes, message flows and subprocesses require complete supplied DI. Unsupported/incomplete rendering fails explicitly instead of silently discarding notation. This toolkit is not a process execution engine and does not certify business correctness.
+
+PlantUML uses the official TeaVM JavaScript engine plus Viz.js WASM in Node workers—no JRE, JAR, native Graphviz or MCP server. BPMN is prepared in Node and displayed by embedded bpmn-js in the reader's ordinary browser. Playwright/Chromium are optional development-test tools only. Builds never install or download dependencies implicitly. See [rendering and troubleshooting](references/rendering.md).
+
+## Authoring references
+
+- [Authoring contract and workflow](references/authoring.md)
+- [Component selection and snippets](references/components.md)
+- [Notation selection](references/notations.md)
+- [Local rendering, security and limitations](references/rendering.md)
+
+## Development and verification
+
+```sh
+npm run setup
+npm test
+npm run build:examples
+# Optional maintainer browser checks (not needed to build documents):
+node scripts/setup.mjs --npm --browser
+npm run test:browser
+npm run validate
+git diff --check
+```
+
+Unit/integration tests cover scaffold safety, metadata, Unicode IDs, source paths, atomic output, SVG isolation, real PlantUML rendering, browser-free BPMN validation/layout and renderer failures. Browser tests exercise reader-side BPMN rendering and open built files offline, checking no-JS fallbacks, desktop/mobile navigation, keyboard focus, overflow and print, and write screenshots/PDFs under `/tmp`. Python validation checks skill packaging, HTML structure and drift from canonical assets without installing another Python dependency.
+
+Change the canonical assets or component snippets, then run `npm run build:examples`. Do not patch generated HTML to fix a theme issue.
 
 ## License
 
-MIT © 2026 Alexandr Kondakov. See [LICENSE](LICENSE).
+MIT for this repository's original code. Upstream dependencies retain their own licenses. BPMN HTML redistributes the bpmn-js production viewer and DOMPurify with license notices; the bpmn.io watermark must remain visible. PlantUML engines and optional test-browser binaries are not embedded in documents.

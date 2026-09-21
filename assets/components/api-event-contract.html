@@ -1,0 +1,49 @@
+<section id="reservation-contract">
+  <h2>Reservation API and creation event</h2>
+  <p>This illustrative contract separates a synchronous outcome from asynchronous delivery. Receiving an event is not required before checkout can use the API response.</p>
+  <h3>Create a hold · <code>POST /v1/reservations</code></h3>
+  <dl class="doc-facts">
+    <dt>Caller and authorization</dt><dd>Checkout uses a service access token with <code>inventory:reserve</code>. Inventory derives the owning client from the token, not from the JSON body.</dd>
+    <dt>Input</dt><dd><code>Content-Type: application/json</code>; required fields <code>sku</code> (nonempty case-sensitive string) and <code>quantity</code> (integer 1–100). Unknown fields are rejected.</dd>
+    <dt>Idempotency</dt><dd>Required <code>Idempotency-Key</code> is scoped to client and endpoint. Completed outcomes are retained for 24 hours. Identical retries replay the status and body; changed input returns <code>409 idempotency_conflict</code>. Concurrent duplicates wait for the first result.</dd>
+    <dt>Retry</dt><dd>On a lost response or a <code>503</code>, retry with the same key and payload using bounded exponential backoff. A replay does not renew the ten-minute hold; inspect its expiry before payment.</dd>
+  </dl>
+  <pre class="doc-payload"><code>{"sku":"SKU-42","quantity":2}</code></pre>
+  <div class="doc-table-scroll" role="region" aria-label="Create reservation responses" tabindex="0">
+    <table class="doc-table">
+      <caption>Response outcomes</caption>
+      <thead><tr><th scope="col">HTTP status</th><th scope="col">Meaning</th><th scope="col">Caller action</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">201</th><td>Hold committed; body below.</td><td>Continue to payment before expiry.</td></tr>
+        <tr><th scope="row">400</th><td><code>invalid_request</code>; malformed input or missing key.</td><td>Correct the request; do not retry unchanged.</td></tr>
+        <tr><th scope="row">401 / 403</th><td>Invalid credentials / missing scope.</td><td>Repair service authentication or permissions.</td></tr>
+        <tr><th scope="row">404</th><td><code>unknown_sku</code>.</td><td>Refresh the basket item.</td></tr>
+        <tr><th scope="row">409</th><td><code>insufficient_stock</code> or <code>idempotency_conflict</code>.</td><td>Reduce quantity or resolve key reuse; do not blindly retry.</td></tr>
+        <tr><th scope="row">503</th><td><code>temporarily_unavailable</code>; outcome may be unknown to the caller.</td><td>Retry with the same key to discover the committed outcome.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Successful response:</p>
+  <pre class="doc-payload"><code>{"reservation_id":"rsv_1042","state":"active","expires_at":"2026-05-01T10:10:00Z"}</code></pre>
+  <p>Domain errors use a stable machine code and a human-readable message:</p>
+  <pre class="doc-payload"><code>{"code":"insufficient_stock","message":"Only one unit is available."}</code></pre>
+  <h3>Event · <code>inventory.reservation.created.v1</code></h3>
+  <dl class="doc-facts">
+    <dt>Producer → consumer</dt><dd>Inventory → checkout projection, through an authenticated broker topic restricted to these services.</dd>
+    <dt>Publication</dt><dd>The hold and outbox entry commit together. The publisher retries until the broker acknowledges delivery.</dd>
+    <dt>Delivery</dt><dd>At least once; duplicates and delayed messages are possible. Consumers deduplicate by <code>event_id</code> and must not treat a delayed creation event as proof the hold is still active.</dd>
+    <dt>Compatibility</dt><dd>Consumers tolerate unknown additive fields. Changing the meaning or type of existing fields requires a new event version.</dd>
+    <dt>Failure handling</dt><dd>After five failed consumer attempts, quarantine the message for inspection and replay with its original event ID; alert the checkout service owner.</dd>
+  </dl>
+  <pre class="doc-payload"><code>{
+  "event_id": "evt_8801",
+  "type": "inventory.reservation.created.v1",
+  "occurred_at": "2026-05-01T10:00:00Z",
+  "data": {
+    "reservation_id": "rsv_1042",
+    "sku": "SKU-42",
+    "quantity": 2,
+    "expires_at": "2026-05-01T10:10:00Z"
+  }
+}</code></pre>
+</section>
