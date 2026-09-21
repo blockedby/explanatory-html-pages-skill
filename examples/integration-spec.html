@@ -4,7 +4,7 @@
 <meta name="description" content="An illustrative integration contract covering ownership, validation, idempotency, event delivery and recovery—not only the happy-path API call."><title>Order submission and fulfilment events</title>
 <style>
 /* Canonical compact monochrome theme. No density class required. */
-:root { color-scheme: light; --ink: #191919; --paper: #faf9f6; --surface: #ffffff; --wash: #eeeeee; --muted: #626262; --line: #191919; --rule: #cccccc; --accent: #191919; --accent-soft: #e8e8e8; --teal: #444444; --measure: 76rem; --shadow: 0.55rem 0.55rem 0 var(--ink); }
+:root { color-scheme: light; --ink: #191919; --paper: #faf9f6; --surface: #ffffff; --wash: #f1f2f4; --muted: #626262; --line: #2f3033; --rule: #d5d7da; --accent: #191919; --accent-soft: #eef0f2; --teal: #444444; --measure: 76rem; --shadow: 0.55rem 0.55rem 0 var(--ink); }
 
 *,
     *::before,
@@ -64,7 +64,7 @@ h1,
 
 .skip-link:focus { transform: translateY(0); }
 
-.site-header { border-top: 0.45rem solid var(--accent); border-bottom: 4px solid var(--line); padding: 0.85rem 0px 0px; }
+.site-header { border-bottom: 1px solid var(--rule); padding: 0.85rem 0px 0px; }
 
 .utility-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.65rem; }
 
@@ -158,14 +158,21 @@ main section { scroll-margin-top: 5rem; }
   .topic-panel[open] .toc { animation: none; }
 }
 
-main > section { padding: 1.5rem 0; border-bottom: 2px solid var(--line); }
+main > section { padding: 1.75rem 0; border-bottom: 1px solid var(--rule); }
 
 /* Direct builder sections and legacy section > .page share one measure. */
 main.page .page { width: 100%; }
-.document-intro { padding-block: 1.5rem 0; }
+.document-content:has(> :first-child:not(section)) { padding-top: 1.25rem; }
+.document-intro { padding-block: 0; }
+.document-content > :first-child:not(section) { margin-bottom: 0; }
 main, main > section, figure, .reading-pane { min-width: 0; }
 h1, h2, h3, p, li, dd, td, th { overflow-wrap: anywhere; }
 main > section > :last-child { margin-bottom: 0; }
+
+/* Keep prose and rich blocks compact but clearly separated without styling their internals. */
+main > section > :where(p, ul, ol, dl, figure, aside, .table-frame, .definition, .steps, .deep-dive, .principle-grid, .takeaway) +
+  :where(p, ul, ol, dl, figure, aside, .table-frame, .definition, .steps, .deep-dive, .principle-grid, .takeaway) { margin-top: 1.25rem; }
+main > section > :where(p, ul, ol, dl, figure, aside, .table-frame, .definition, .steps, .deep-dive, .principle-grid, .takeaway) + h3 { margin-top: 2rem; }
 
 .section-kicker { display: flex; align-items: center; gap: 0.8rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem; }
 
@@ -209,7 +216,7 @@ h3 { margin-bottom: 0.7rem; font-size: 1.25rem; line-height: 1.15; }
 
 .signal-list dd { margin: 0px; color: rgb(255, 255, 255); font-size: 1rem; line-height: 1.35; }
 
-.diagram { border: 3px solid var(--line); background: var(--surface); margin: 1rem 0px 0px; padding: 1rem; }
+.diagram { border: 1px solid var(--rule); background: var(--surface); margin: 1.25rem 0px 0px; padding: 1rem; }
 
 .diagram-topline { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.75rem; }
 
@@ -263,7 +270,7 @@ figcaption { padding-top: 1rem; border-top: 1px solid var(--rule); font-size: 1r
 
 figcaption strong { margin-right: 0.35rem; }
 
-.note-strip { border-left: 0.4rem solid var(--accent); background: var(--accent-soft); margin-top: 1rem; padding: 1rem; }
+.note-strip { border-left: 3px solid var(--accent); background: var(--accent-soft); margin-top: 1.25rem; padding: 1rem; }
 
 /* Only a separate label followed by one complete paragraph opts into columns. */
 .note-strip:has(> strong:first-child + p:last-child) { display: grid; grid-template-columns: minmax(9rem, 0.45fr) minmax(0, 1.55fr); gap: 1.5rem; }
@@ -307,16 +314,16 @@ figcaption strong { margin-right: 0.35rem; }
 
 .deep-dive-label { font-family: "Courier New", Courier, monospace; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
 
-.table-frame { margin-top: 1rem; }
+.table-frame { margin: 1.25rem 0; }
 
 .boundary-table { width: 100%; border-collapse: collapse; background: var(--surface); }
 
 .boundary-table caption { margin-bottom: 0.9rem; color: var(--muted); font-size: 0.92rem; text-align: left; }
 
 .boundary-table th,
-    .boundary-table td { padding: 0.75rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .boundary-table td { padding: 0.75rem; border: 1px solid var(--rule); text-align: left; vertical-align: top; }
 
-.boundary-table th { color: var(--paper); background: var(--ink); font-family: "Courier New", Courier, monospace; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.boundary-table th { color: var(--ink); background: var(--wash); font-family: "Courier New", Courier, monospace; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
 
 .boundary-table td { font-size: 1rem; }
 
@@ -387,7 +394,7 @@ figcaption strong { margin-right: 0.35rem; }
       .boundary-table tbody,
       .boundary-table tr,
       .boundary-table td { display: block; width: 100%; }
-  .boundary-table tr { border: 2px solid var(--line); }
+  .boundary-table tr { border: 1px solid var(--rule); }
   .boundary-table tr + tr { margin-top: 1rem; }
   .boundary-table td,
       .boundary-table td:first-child,
@@ -407,7 +414,7 @@ pre code { padding: 0; border: 0; overflow-wrap: normal; }
 .definition code, .node--dark code { color: var(--ink); }
 .skip-link::selection, .skip-link ::selection { color: var(--ink); background: var(--paper); }
 :where([tabindex]):focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-figure.diagram-rendered { margin: 1rem 0; padding: 1rem; border: 2px solid var(--line); background: var(--surface); }
+figure.diagram-rendered { margin: 1.25rem 0; padding: 1rem; border: 1px solid var(--rule); background: var(--surface); }
 .diagram-viewport { max-width: 100%; min-width: 0; overflow: auto; padding: 0.25rem; margin-bottom: 1rem; }
 /* Preserve renderer dimensions: large diagrams scroll locally rather than shrinking labels. */
 .diagram-viewport > svg { display: block; max-width: none; flex-shrink: 0; margin-inline: auto; }
@@ -455,7 +462,7 @@ main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) minmax(0, 3fr);
   gap: 0;
-  margin-block: 1rem;
+  margin-block: 1.25rem;
   border-block: 1px solid var(--rule);
 }
 .doc-facts > dt,
@@ -464,13 +471,13 @@ main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
 .doc-facts > dt ~ dt,
 .doc-facts > dd ~ dd { border-top: 1px solid var(--rule); }
 
-.doc-scenario { margin-block: 1rem; padding-inline-start: 1rem; border-inline-start: 3px solid var(--line); }
+.doc-scenario { margin-block: 1.25rem; padding-inline-start: 1rem; border-inline-start: 2px solid var(--line); }
 .doc-scenario > ol { padding-inline-start: 1.5rem; }
 .doc-scenario li + li { margin-top: 0.5rem; }
-.doc-alternatives { margin-block: 1rem; padding: 1rem; background: var(--wash); }
+.doc-alternatives { margin-block: 1.25rem; padding: 1rem; background: var(--wash); }
 .doc-alternatives > :last-child { margin-bottom: 0; }
 
-.doc-table-scroll { max-width: 100%; margin-block: 1rem; overflow-x: auto; }
+.doc-table-scroll { max-width: 100%; margin-block: 1.25rem; overflow-x: auto; }
 .doc-table-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .doc-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; line-height: 1.5; }
 .doc-table caption { padding-block: 0 0.6rem; text-align: start; font-weight: 700; }
@@ -485,9 +492,9 @@ main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
 .doc-criteria p { margin-block: 0.25rem 0; }
 .doc-payload { max-width: 100%; padding: 1rem; border: 1px solid var(--rule); background: var(--wash); white-space: pre-wrap; overflow-wrap: anywhere; }
 .doc-payload > code { padding: 0; border: 0; background: transparent; color: inherit; }
-.doc-change { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-block: 1rem; }
+.doc-change { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-block: 1.25rem; }
 .doc-change > div { min-width: 0; padding: 1rem; border: 1px solid var(--rule); }
-.doc-change h3 { padding-bottom: 0.5rem; border-bottom: 2px solid var(--line); }
+.doc-change h3 { padding-bottom: 0.5rem; border-bottom: 1px solid var(--rule); }
 .doc-change > div > :last-child { margin-bottom: 0; }
 
 @media (max-width: 40rem) {
@@ -539,7 +546,7 @@ main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
 </section>
 <section id="sequence" aria-labelledby="sequence-heading">
   <h2 id="sequence-heading">Persistence and publication are different boundaries</h2>
-  <figure class="diagram-rendered"><div class="diagram-viewport" tabindex="0" role="region" aria-label="Diagram; scroll horizontally to inspect: The order and its outbox event are committed together. Publication happens later; a broker outage delays delivery but does not turn an accepted order into an unrecorded one."><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1041" height="438" viewBox="0 0 1041 438" zoomAndPan="magnify" preserveAspectRatio="none" role="img" aria-labelledby="rendered-diagram-1-title" focusable="false"><title id="rendered-diagram-1-title">The order and its outbox event are committed together. Publication happens later; a broker outage delays delivery but does not turn an accepted order into an unrecorded one.</title><defs></defs><g font-family="sans-serif" lengthAdjust="spacing"><g><rect x="36" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="39" y1="64" x2="39" y2="432"></line></g><g><rect x="181" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="184" y1="64" x2="184" y2="432"></line></g><g><rect x="381" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="385" y1="64" x2="385" y2="432"></line></g><g><rect x="522" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="525" y1="64" x2="525" y2="432"></line></g><g><rect x="650" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="653" y1="64" x2="653" y2="432"></line></g><g><rect x="819" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="822" y1="64" x2="822" y2="432"></line></g><rect x="5" y="36" width="69" height="27" fill="#EEE"></rect><text x="12" y="53" fill="#222" font-size="13" textLength="55">Checkout</text><rect x="158" y="36" width="54" height="27" fill="#EEE"></rect><text x="165" y="53" fill="#222" font-size="13" textLength="40">Orders</text><text x="354" y="61" fill="#222" font-size="13" textLength="56">Database</text><path d="M367,15 C367,5 385,5 385,5 C385,5 403,5 403,15 L403,41 C403,51 385,51 385,51 C385,51 367,51 367,41 L367,15" fill="#E2E2F0"></path><path d="M367,15 C367,25 385,25 385,25 C385,25 403,25 403,15" fill="none"></path><rect x="491" y="36" width="68" height="27" fill="#EEE"></rect><text x="498" y="53" fill="#222" font-size="13" textLength="54">Publisher</text><path d="M629,41 L677,41 C682,41 682,52 682,52 C682,52 682,64 677,64 L629,64 C624,64 624,52 624,52 C624,52 624,41 629,41" fill="#E2E2F0"></path><path d="M677,41 C672,41 672,52 672,52 C672,64 677,64 677,64" fill="none"></path><text x="629" y="56" fill="#222" font-size="13" textLength="38">Broker</text><rect x="787" y="36" width="70" height="27" fill="#EEE"></rect><text x="794" y="53" fill="#222" font-size="13" textLength="56">Fulfilment</text><polygon points="172,87,182,91,172,95,176,91" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="39" y1="91" x2="178" y2="91" style="stroke:#333;stroke-width:1;"></line><text x="51" y="86" fill="#222" font-size="13" textLength="121">POST /v1/orders + key</text><line x1="184" y1="118" x2="226" y2="118" style="stroke:#333;stroke-width:1;"></line><line x1="226" y1="118" x2="226" y2="131" style="stroke:#333;stroke-width:1;"></line><line x1="185" y1="131" x2="226" y2="131" style="stroke:#333;stroke-width:1;"></line><polygon points="195,127,185,131,195,135,191,131" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><text x="191" y="113" fill="#222" font-size="13" textLength="140">Validate and authenticate</text><polygon points="373,154,383,158,373,162,377,158" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="184" y1="158" x2="379" y2="158" style="stroke:#333;stroke-width:1;"></line><text x="196" y="153" fill="#222" font-size="13" textLength="176">Transaction: order + key + outbox</text><polygon points="195,181,185,185,195,189,191,185" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="189" y1="185" x2="384" y2="185" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="262" y="180" fill="#222" font-size="13" textLength="45">Commit</text><polygon points="50,208,40,212,50,216,46,212" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="44" y1="212" x2="183" y2="212" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="75" y="207" fill="#222" font-size="13" textLength="74">201 accepted</text><polygon points="396,235,386,239,396,243,392,239" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="390" y1="239" x2="524" y2="239" style="stroke:#333;stroke-width:1;"></line><text x="397" y="234" fill="#222" font-size="13" textLength="116">Read pending outbox</text><polygon points="641,262,651,266,641,270,645,266" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="525" y1="266" x2="647" y2="266" style="stroke:#333;stroke-width:1;"></line><text x="537" y="261" fill="#222" font-size="13" textLength="104">order.accepted.v1</text><polygon points="536,289,526,293,536,297,532,293" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="530" y1="293" x2="652" y2="293" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="550" y="288" fill="#222" font-size="13" textLength="77">Acknowledge</text><polygon points="396,316,386,320,396,324,392,320" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="390" y1="320" x2="524" y2="320" style="stroke:#333;stroke-width:1;"></line><text x="414" y="315" fill="#222" font-size="13" textLength="82">Mark delivered</text><polygon points="810,343,820,347,810,351,814,347" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="653" y1="347" x2="816" y2="347" style="stroke:#333;stroke-width:1;"></line><text x="665" y="342" fill="#222" font-size="13" textLength="145">Event (may be redelivered)</text><line x1="822" y1="374" x2="864" y2="374" style="stroke:#333;stroke-width:1;"></line><line x1="864" y1="374" x2="864" y2="387" style="stroke:#333;stroke-width:1;"></line><line x1="823" y1="387" x2="864" y2="387" style="stroke:#333;stroke-width:1;"></line><polygon points="833,383,823,387,833,391,829,387" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><text x="829" y="369" fill="#222" font-size="13" textLength="199">Commit duplicate marker + local work</text><polygon points="664,410,654,414,664,418,660,414" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="658" y1="414" x2="821" y2="414" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="699" y="409" fill="#222" font-size="13" textLength="77">Acknowledge</text></g></svg></div><details class="diagram-source deep-dive"><summary>Diagram source</summary><pre><code>@startuml
+  <figure class="diagram-rendered"><div class="diagram-viewport" tabindex="0" role="region" aria-label="Diagram; scroll horizontally to inspect: The order and its outbox event are committed together. Publication happens later; a broker outage delays delivery but does not turn an accepted order into an unrecorded one."><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1041" height="438" viewBox="0 0 1041 438" zoomAndPan="magnify" preserveAspectRatio="none" role="img" aria-labelledby="rendered-diagram-1-title" focusable="false"><title id="rendered-diagram-1-title">The order and its outbox event are committed together. Publication happens later; a broker outage delays delivery but does not turn an accepted order into an unrecorded one.</title><defs></defs><g font-family="sans-serif" lengthAdjust="spacing"><g><rect x="36" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="39" y1="64" x2="39" y2="432" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><g><rect x="181" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="184" y1="64" x2="184" y2="432" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><g><rect x="381" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="385" y1="64" x2="385" y2="432" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><g><rect x="522" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="525" y1="64" x2="525" y2="432" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><g><rect x="650" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="653" y1="64" x2="653" y2="432" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><g><rect x="819" y="64" width="8" height="368" fill="#000" fill-opacity="0"></rect><line x1="822" y1="64" x2="822" y2="432" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><rect x="5" y="36" width="69" height="27" fill="#EEE"></rect><text x="12" y="53" fill="#222" font-size="13" textLength="55">Checkout</text><rect x="158" y="36" width="54" height="27" fill="#EEE"></rect><text x="165" y="53" fill="#222" font-size="13" textLength="40">Orders</text><text x="354" y="61" fill="#222" font-size="13" textLength="56">Database</text><path d="M367,15 C367,5 385,5 385,5 C385,5 403,5 403,15 L403,41 C403,51 385,51 385,51 C385,51 367,51 367,41 L367,15" fill="#E2E2F0"></path><path d="M367,15 C367,25 385,25 385,25 C385,25 403,25 403,15" fill="none"></path><rect x="491" y="36" width="68" height="27" fill="#EEE"></rect><text x="498" y="53" fill="#222" font-size="13" textLength="54">Publisher</text><path d="M629,41 L677,41 C682,41 682,52 682,52 C682,52 682,64 677,64 L629,64 C624,64 624,52 624,52 C624,52 624,41 629,41" fill="#E2E2F0"></path><path d="M677,41 C672,41 672,52 672,52 C672,64 677,64 677,64" fill="none"></path><text x="629" y="56" fill="#222" font-size="13" textLength="38">Broker</text><rect x="787" y="36" width="70" height="27" fill="#EEE"></rect><text x="794" y="53" fill="#222" font-size="13" textLength="56">Fulfilment</text><polygon points="172,87,182,91,172,95,176,91" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="39" y1="91" x2="178" y2="91" style="stroke:#333;stroke-width:1;"></line><text x="51" y="86" fill="#222" font-size="13" textLength="121">POST /v1/orders + key</text><line x1="184" y1="118" x2="226" y2="118" style="stroke:#333;stroke-width:1;"></line><line x1="226" y1="118" x2="226" y2="131" style="stroke:#333;stroke-width:1;"></line><line x1="185" y1="131" x2="226" y2="131" style="stroke:#333;stroke-width:1;"></line><polygon points="195,127,185,131,195,135,191,131" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><text x="191" y="113" fill="#222" font-size="13" textLength="140">Validate and authenticate</text><polygon points="373,154,383,158,373,162,377,158" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="184" y1="158" x2="379" y2="158" style="stroke:#333;stroke-width:1;"></line><text x="196" y="153" fill="#222" font-size="13" textLength="176">Transaction: order + key + outbox</text><polygon points="195,181,185,185,195,189,191,185" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="189" y1="185" x2="384" y2="185" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="262" y="180" fill="#222" font-size="13" textLength="45">Commit</text><polygon points="50,208,40,212,50,216,46,212" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="44" y1="212" x2="183" y2="212" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="75" y="207" fill="#222" font-size="13" textLength="74">201 accepted</text><polygon points="396,235,386,239,396,243,392,239" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="390" y1="239" x2="524" y2="239" style="stroke:#333;stroke-width:1;"></line><text x="397" y="234" fill="#222" font-size="13" textLength="116">Read pending outbox</text><polygon points="641,262,651,266,641,270,645,266" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="525" y1="266" x2="647" y2="266" style="stroke:#333;stroke-width:1;"></line><text x="537" y="261" fill="#222" font-size="13" textLength="104">order.accepted.v1</text><polygon points="536,289,526,293,536,297,532,293" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="530" y1="293" x2="652" y2="293" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="550" y="288" fill="#222" font-size="13" textLength="77">Acknowledge</text><polygon points="396,316,386,320,396,324,392,320" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="390" y1="320" x2="524" y2="320" style="stroke:#333;stroke-width:1;"></line><text x="414" y="315" fill="#222" font-size="13" textLength="82">Mark delivered</text><polygon points="810,343,820,347,810,351,814,347" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="653" y1="347" x2="816" y2="347" style="stroke:#333;stroke-width:1;"></line><text x="665" y="342" fill="#222" font-size="13" textLength="145">Event (may be redelivered)</text><line x1="822" y1="374" x2="864" y2="374" style="stroke:#333;stroke-width:1;"></line><line x1="864" y1="374" x2="864" y2="387" style="stroke:#333;stroke-width:1;"></line><line x1="823" y1="387" x2="864" y2="387" style="stroke:#333;stroke-width:1;"></line><polygon points="833,383,823,387,833,391,829,387" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><text x="829" y="369" fill="#222" font-size="13" textLength="199">Commit duplicate marker + local work</text><polygon points="664,410,654,414,664,418,660,414" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="658" y1="414" x2="821" y2="414" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="699" y="409" fill="#222" font-size="13" textLength="77">Acknowledge</text></g></svg></div><details class="diagram-source deep-dive"><summary>Diagram source</summary><pre><code>@startuml
 participant Checkout
 participant Orders
 database Database

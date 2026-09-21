@@ -85,6 +85,8 @@ Callouts use natural text flow by default. Structured columns are reserved for a
 - `.doc-payload`: wrapping `pre` / `code` examples; escape HTML-sensitive characters in literal source.
 - `.doc-change`: two aligned before/after blocks, stacked in DOM order on narrow screens and in print.
 
+The canonical theme supplies roughly 20px between neighboring content blocks and 28–32px at section/subheading transitions, with light table headers and thin neutral rules. Keep this spacing in shared CSS rather than adding blank paragraphs or `<br>` elements to documents. Internal component spacing remains independent of the outer block rhythm.
+
 Colors use the existing `--ink`, `--wash`, `--rule`, `--line`, and `--accent` tokens. There are no global selectors, navigation rules, root variables, motion, or extra fonts. Existing `.definition`, `.steps`, `.note-strip`, `.boundary-table`, `.deep-dive`, `.takeaway`, `.diagram`, `.flow`, and `.node` styles remain theme-owned.
 
 ## Editable diagram figures

@@ -4,6 +4,12 @@ Tracking: https://github.com/blockedby/explanatory-html-pages-skill/issues/1
 
 Verified on Linux x64 with Node 24.21.0. Builds use npm dependencies only: PlantUML TeaVM/Viz.js in Node, BPMN XML/DI preparation in Node, and embedded bpmn-js/DOMPurify in the reader. Neither Java nor Chromium is a build requirement. Chromium was used only as an optional development tool to test the ordinary reader-browser path. This is implementation acceptance, not proof of business correctness.
 
+## Documentation spacing and integrated rendering verification
+
+Added 20px content-block gaps, 28–32px section/subheading breaks, light neutral table headers and thin separators without changing shared widths or inline-callout behavior. Fresh integration: **46 unit/renderer tests and 11 browser scenarios passed**, zero failures/skips; rebuilt all examples/template and both delivered reports, then passed repository validation and diff checks. Geometry tests cover 1920/1440/768/390px and both sidebar states, including actual header/introduction and table/prose gaps.
+
+Repeated the pipelines guide's browser and detail probes successfully (desktop/mobile, offline, eight SVGs, source disclosure, keyboard scrolling, anchors and print smoke). Inspected its fresh `checks/desktop-top.png` and `checks/audit-desktop.png`: updated block spacing and lighter tables are visible; the simplified audit sequence has visible lifelines and neutral notes. Guide text retains the omitted validation/termination details. Rendering safety is not weakened by the style fix.
+
 ## Sequence lifeline rendering follow-up
 
 The TeaVM engine emitted lifeline geometry without a stroke, leaving sequence participants visually disconnected. A renderer-owned PlantUML style now explicitly supplies the dashed dark stroke; note backgrounds are explicitly neutral instead of the engine's yellow default. Authored style overrides remain prohibited, and sanitizer/worker/network controls are unchanged.

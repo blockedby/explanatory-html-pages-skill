@@ -110,6 +110,8 @@ test('semantic callouts keep natural flow and structured variants keep intention
 <p class="document-intro">Введение документа выровнено с секциями и не получает независимое ограничение длины строки.</p>
 <section id="ordinary"><h2><code>explanatory-html-pages-with-an-intentionally-long-skill-name</code>: офлайн-документ через общий design system</h2>
 <p class="section-intro">Секция, обычный текст и широкие содержательные элементы используют общий адаптивный холст.</p>
+<div class="table-frame fixture-captioned-table"><table class="boundary-table"><caption>Сопоставление вариантов</caption><thead><tr><th scope="col">Вариант</th><th scope="col">Результат</th></tr></thead><tbody><tr><td>Канонический</td><td>Проверяемый документ</td></tr></tbody></table></div>
+<p class="fixture-after-table">Следующий абзац отделён от нижней границы таблицы единым межблочным интервалом.</p>
 <figure class="diagram fixture-diagram"><div class="diagram-viewport"><svg width="1080" height="80" viewBox="0 0 1080 80" role="img" aria-label="Тестовая широкая диаграмма"><rect width="1080" height="80" fill="#eeeeee"/><path d="M20 40H1060" stroke="#191919" stroke-width="3"/></svg></div></figure>
 <p class="fixture-prose">Абзац сразу после диаграммы занимает доступную ширину секции. Он больше не выглядит узкой левой полосой с огромным пустым полем справа.</p>
 <ul class="fixture-list"><li>Обычные списки выровнены с абзацами и широкими элементами секции.</li></ul>
@@ -121,6 +123,7 @@ test('semantic callouts keep natural flow and structured variants keep intention
 <div class="definition" id="rich-definition"><div><p class="important">A reservation is a temporary promise.</p><p class="definition-detail">It is not a completed sale. Confirmation and expiry still need explicit outcomes.</p></div><dl class="signal-list"><div><dt>Claim</dt><dd>An item and quantity.</dd></div><div><dt>Exit</dt><dd>Confirm, cancel, or expire.</dd></div></dl></div>
 <aside class="note-strip" id="paragraph-note"><p>Один абзац с <code>NOT VERIFIED</code> не требует отдельной колонки.</p></aside>
 <aside class="note-strip" id="structured-note"><strong>Reuse the key.</strong><p>Retry the identical request with its original idempotency key.</p></aside>
+<h3 class="fixture-after-note">Следующий смысловой блок</h3>
 <div class="takeaway" id="structured-takeaway"><span class="takeaway-label">Key conclusion</span><p>A hold protects stock, not the whole purchase.</p></div>
 <div class="doc-table-scroll" tabindex="0"><table class="doc-table"><tr><th>Wide data remains wide</th><td>Tables retain their available measure rather than inheriting prose width.</td></tr></table></div>
 </section></main></body></html>`);
@@ -129,6 +132,18 @@ test('semantic callouts keep natural flow and structured variants keep intention
   t.after(() => context.close());
   const page = await context.newPage();
   await page.goto(pathToFileURL(fixturePath).href);
+
+  const relativeLuminance = value => {
+    const channels = value.match(/[\d.]+/g).slice(0, 3).map(Number).map(channel => {
+      const normalized = channel / 255;
+      return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    });
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  const contrastRatio = (foreground, background) => {
+    const values = [relativeLuminance(foreground), relativeLuminance(background)].sort((a, b) => b - a);
+    return (values[0] + 0.05) / (values[1] + 0.05);
+  };
 
   const assertLayout = async (width, open) => {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
@@ -166,6 +181,14 @@ test('semantic callouts keep natural flow and structured variants keep intention
       const structuredCopy = box('#structured-takeaway > p');
       const noteLabel = box('#structured-note > strong');
       const noteCopy = box('#structured-note > p');
+      const header = box('.site-header');
+      const intro = box('.document-intro');
+      const captionedTable = box('.fixture-captioned-table');
+      const afterTable = box('.fixture-after-table');
+      const structuredNote = box('#structured-note');
+      const afterNote = box('.fixture-after-note');
+      const tableHead = document.querySelector('.fixture-captioned-table thead th');
+      const tableHeadStyle = getComputedStyle(tableHead);
       return {
         noteDisplay: getComputedStyle(note).display,
         paragraphNoteDisplay: getComputedStyle(document.querySelector('#paragraph-note')).display,
@@ -212,6 +235,13 @@ test('semantic callouts keep natural flow and structured variants keep intention
         richGrid: getComputedStyle(document.querySelector('#rich-definition')).gridTemplateColumns,
         takeawayGrid: getComputedStyle(document.querySelector('#structured-takeaway')).gridTemplateColumns,
         noteGrid: getComputedStyle(document.querySelector('#structured-note')).gridTemplateColumns,
+        rhythm: {
+          headerToIntro: intro.top - header.bottom,
+          tableToParagraph: afterTable.top - captionedTable.bottom,
+          noteToHeading: afterNote.top - structuredNote.bottom,
+          structuredInternal: innerWidth >= 768 ? Math.abs(noteCopy.top - noteLabel.top) : noteCopy.top - noteLabel.bottom,
+        },
+        tableHead: { background: tableHeadStyle.backgroundColor, color: tableHeadStyle.color },
       };
     });
 
@@ -224,6 +254,12 @@ test('semantic callouts keep natural flow and structured variants keep intention
     assert.ok(metrics.takeawayRatio > 0.85, `${width}px: single-child takeaway occupies its useful measure`);
     assert.equal(metrics.headingFits, true, `${width}px: long code heading wraps inside its heading`);
     assert.deepEqual(metrics.headingCode, { border: '0px', padding: '0px', background: 'rgba(0, 0, 0, 0)' }, `${width}px: heading code is not a padded chip`);
+    assert.ok(metrics.rhythm.headerToIntro >= 16 && metrics.rhythm.headerToIntro <= 24, `${width}px: introduction clears the header rule (${metrics.rhythm.headerToIntro}px)`);
+    assert.ok(metrics.rhythm.tableToParagraph >= 16 && metrics.rhythm.tableToParagraph <= 24, `${width}px: table and following prose use the inter-block rhythm (${metrics.rhythm.tableToParagraph}px)`);
+    assert.ok(metrics.rhythm.noteToHeading >= 28 && metrics.rhythm.noteToHeading <= 36, `${width}px: note and next heading use a section-level break (${metrics.rhythm.noteToHeading}px)`);
+    assert.ok(metrics.rhythm.structuredInternal >= -1 && metrics.rhythm.structuredInternal <= 12, `${width}px: structured note internals stay compact (${metrics.rhythm.structuredInternal}px)`);
+    assert.ok(relativeLuminance(metrics.tableHead.background) > 0.75, `${width}px: table heading uses a light neutral background (${metrics.tableHead.background})`);
+    assert.ok(contrastRatio(metrics.tableHead.color, metrics.tableHead.background) >= 7, `${width}px: table heading remains legible (${metrics.tableHead.color} on ${metrics.tableHead.background})`);
     for (const [name, actualWidth] of Object.entries(metrics.sharedWidths)) {
       assert.ok(Math.abs(actualWidth - metrics.sectionWidth) <= 2, `${width}px/${open ? 'open' : 'closed'}: ${name} shares the section canvas (${actualWidth} vs ${metrics.sectionWidth})`);
     }

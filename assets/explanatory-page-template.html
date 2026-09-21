@@ -4,7 +4,7 @@
 <meta name="description" content="Проследим загрузку заказа: кто принимает решение, где хранятся данные и почему таймаут ещё не означает отказ."><title>Как веб-запрос пересекает границы системы</title>
 <style>
 /* Canonical compact monochrome theme. No density class required. */
-:root { color-scheme: light; --ink: #191919; --paper: #faf9f6; --surface: #ffffff; --wash: #eeeeee; --muted: #626262; --line: #191919; --rule: #cccccc; --accent: #191919; --accent-soft: #e8e8e8; --teal: #444444; --measure: 76rem; --shadow: 0.55rem 0.55rem 0 var(--ink); }
+:root { color-scheme: light; --ink: #191919; --paper: #faf9f6; --surface: #ffffff; --wash: #f1f2f4; --muted: #626262; --line: #2f3033; --rule: #d5d7da; --accent: #191919; --accent-soft: #eef0f2; --teal: #444444; --measure: 76rem; --shadow: 0.55rem 0.55rem 0 var(--ink); }
 
 *,
     *::before,
@@ -64,7 +64,7 @@ h1,
 
 .skip-link:focus { transform: translateY(0); }
 
-.site-header { border-top: 0.45rem solid var(--accent); border-bottom: 4px solid var(--line); padding: 0.85rem 0px 0px; }
+.site-header { border-bottom: 1px solid var(--rule); padding: 0.85rem 0px 0px; }
 
 .utility-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.65rem; }
 
@@ -158,14 +158,21 @@ main section { scroll-margin-top: 5rem; }
   .topic-panel[open] .toc { animation: none; }
 }
 
-main > section { padding: 1.5rem 0; border-bottom: 2px solid var(--line); }
+main > section { padding: 1.75rem 0; border-bottom: 1px solid var(--rule); }
 
 /* Direct builder sections and legacy section > .page share one measure. */
 main.page .page { width: 100%; }
-.document-intro { padding-block: 1.5rem 0; }
+.document-content:has(> :first-child:not(section)) { padding-top: 1.25rem; }
+.document-intro { padding-block: 0; }
+.document-content > :first-child:not(section) { margin-bottom: 0; }
 main, main > section, figure, .reading-pane { min-width: 0; }
 h1, h2, h3, p, li, dd, td, th { overflow-wrap: anywhere; }
 main > section > :last-child { margin-bottom: 0; }
+
+/* Keep prose and rich blocks compact but clearly separated without styling their internals. */
+main > section > :where(p, ul, ol, dl, figure, aside, .table-frame, .definition, .steps, .deep-dive, .principle-grid, .takeaway) +
+  :where(p, ul, ol, dl, figure, aside, .table-frame, .definition, .steps, .deep-dive, .principle-grid, .takeaway) { margin-top: 1.25rem; }
+main > section > :where(p, ul, ol, dl, figure, aside, .table-frame, .definition, .steps, .deep-dive, .principle-grid, .takeaway) + h3 { margin-top: 2rem; }
 
 .section-kicker { display: flex; align-items: center; gap: 0.8rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem; }
 
@@ -209,7 +216,7 @@ h3 { margin-bottom: 0.7rem; font-size: 1.25rem; line-height: 1.15; }
 
 .signal-list dd { margin: 0px; color: rgb(255, 255, 255); font-size: 1rem; line-height: 1.35; }
 
-.diagram { border: 3px solid var(--line); background: var(--surface); margin: 1rem 0px 0px; padding: 1rem; }
+.diagram { border: 1px solid var(--rule); background: var(--surface); margin: 1.25rem 0px 0px; padding: 1rem; }
 
 .diagram-topline { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--rule); padding-bottom: 0.75rem; }
 
@@ -263,7 +270,7 @@ figcaption { padding-top: 1rem; border-top: 1px solid var(--rule); font-size: 1r
 
 figcaption strong { margin-right: 0.35rem; }
 
-.note-strip { border-left: 0.4rem solid var(--accent); background: var(--accent-soft); margin-top: 1rem; padding: 1rem; }
+.note-strip { border-left: 3px solid var(--accent); background: var(--accent-soft); margin-top: 1.25rem; padding: 1rem; }
 
 /* Only a separate label followed by one complete paragraph opts into columns. */
 .note-strip:has(> strong:first-child + p:last-child) { display: grid; grid-template-columns: minmax(9rem, 0.45fr) minmax(0, 1.55fr); gap: 1.5rem; }
@@ -307,16 +314,16 @@ figcaption strong { margin-right: 0.35rem; }
 
 .deep-dive-label { font-family: "Courier New", Courier, monospace; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
 
-.table-frame { margin-top: 1rem; }
+.table-frame { margin: 1.25rem 0; }
 
 .boundary-table { width: 100%; border-collapse: collapse; background: var(--surface); }
 
 .boundary-table caption { margin-bottom: 0.9rem; color: var(--muted); font-size: 0.92rem; text-align: left; }
 
 .boundary-table th,
-    .boundary-table td { padding: 0.75rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .boundary-table td { padding: 0.75rem; border: 1px solid var(--rule); text-align: left; vertical-align: top; }
 
-.boundary-table th { color: var(--paper); background: var(--ink); font-family: "Courier New", Courier, monospace; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.boundary-table th { color: var(--ink); background: var(--wash); font-family: "Courier New", Courier, monospace; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
 
 .boundary-table td { font-size: 1rem; }
 
@@ -387,7 +394,7 @@ figcaption strong { margin-right: 0.35rem; }
       .boundary-table tbody,
       .boundary-table tr,
       .boundary-table td { display: block; width: 100%; }
-  .boundary-table tr { border: 2px solid var(--line); }
+  .boundary-table tr { border: 1px solid var(--rule); }
   .boundary-table tr + tr { margin-top: 1rem; }
   .boundary-table td,
       .boundary-table td:first-child,
@@ -407,7 +414,7 @@ pre code { padding: 0; border: 0; overflow-wrap: normal; }
 .definition code, .node--dark code { color: var(--ink); }
 .skip-link::selection, .skip-link ::selection { color: var(--ink); background: var(--paper); }
 :where([tabindex]):focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-figure.diagram-rendered { margin: 1rem 0; padding: 1rem; border: 2px solid var(--line); background: var(--surface); }
+figure.diagram-rendered { margin: 1.25rem 0; padding: 1rem; border: 1px solid var(--rule); background: var(--surface); }
 .diagram-viewport { max-width: 100%; min-width: 0; overflow: auto; padding: 0.25rem; margin-bottom: 1rem; }
 /* Preserve renderer dimensions: large diagrams scroll locally rather than shrinking labels. */
 .diagram-viewport > svg { display: block; max-width: none; flex-shrink: 0; margin-inline: auto; }
@@ -455,7 +462,7 @@ main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) minmax(0, 3fr);
   gap: 0;
-  margin-block: 1rem;
+  margin-block: 1.25rem;
   border-block: 1px solid var(--rule);
 }
 .doc-facts > dt,
@@ -464,13 +471,13 @@ main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
 .doc-facts > dt ~ dt,
 .doc-facts > dd ~ dd { border-top: 1px solid var(--rule); }
 
-.doc-scenario { margin-block: 1rem; padding-inline-start: 1rem; border-inline-start: 3px solid var(--line); }
+.doc-scenario { margin-block: 1.25rem; padding-inline-start: 1rem; border-inline-start: 2px solid var(--line); }
 .doc-scenario > ol { padding-inline-start: 1.5rem; }
 .doc-scenario li + li { margin-top: 0.5rem; }
-.doc-alternatives { margin-block: 1rem; padding: 1rem; background: var(--wash); }
+.doc-alternatives { margin-block: 1.25rem; padding: 1rem; background: var(--wash); }
 .doc-alternatives > :last-child { margin-bottom: 0; }
 
-.doc-table-scroll { max-width: 100%; margin-block: 1rem; overflow-x: auto; }
+.doc-table-scroll { max-width: 100%; margin-block: 1.25rem; overflow-x: auto; }
 .doc-table-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .doc-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; line-height: 1.5; }
 .doc-table caption { padding-block: 0 0.6rem; text-align: start; font-weight: 700; }
@@ -485,9 +492,9 @@ main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
 .doc-criteria p { margin-block: 0.25rem 0; }
 .doc-payload { max-width: 100%; padding: 1rem; border: 1px solid var(--rule); background: var(--wash); white-space: pre-wrap; overflow-wrap: anywhere; }
 .doc-payload > code { padding: 0; border: 0; background: transparent; color: inherit; }
-.doc-change { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-block: 1rem; }
+.doc-change { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-block: 1.25rem; }
 .doc-change > div { min-width: 0; padding: 1rem; border: 1px solid var(--rule); }
-.doc-change h3 { padding-bottom: 0.5rem; border-bottom: 2px solid var(--line); }
+.doc-change h3 { padding-bottom: 0.5rem; border-bottom: 1px solid var(--rule); }
 .doc-change > div > :last-child { margin-bottom: 0; }
 
 @media (max-width: 40rem) {
@@ -532,7 +539,7 @@ main svg:not(.diagram-viewport > svg) { max-width: 100%; height: auto; }
 </section>
 <section id="messages" aria-labelledby="messages-heading">
   <h2 id="messages-heading">Один заказ: успешный путь и отказ</h2>
-  <figure class="diagram-rendered"><div class="diagram-viewport" tabindex="0" role="region" aria-label="Диаграмма; прокручивайте по горизонтали для просмотра: В этой модели авторизация происходит до чтения заказа. Ответы возвращаются по обратному пути; отказ не должен приводить к выдаче данных."><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="535" height="420" viewBox="0 0 535 420" zoomAndPan="magnify" preserveAspectRatio="none" role="img" aria-labelledby="rendered-diagram-1-title" focusable="false"><title id="rendered-diagram-1-title">В этой модели авторизация происходит до чтения заказа. Ответы возвращаются по обратному пути; отказ не должен приводить к выдаче данных.</title><defs></defs><g font-family="sans-serif" lengthAdjust="spacing"><rect x="35" y="184" width="473" height="206" fill="none" style="stroke:#000;stroke-width:2;"></rect><g><rect x="47" y="78" width="8" height="336" fill="#000" fill-opacity="0"></rect><line x1="51" y1="78" x2="51" y2="414"></line></g><g><rect x="170" y="78" width="8" height="336" fill="#000" fill-opacity="0"></rect><line x1="173" y1="78" x2="173" y2="414"></line></g><g><rect x="354" y="78" width="8" height="336" fill="#000" fill-opacity="0"></rect><line x1="358" y1="78" x2="358" y2="414"></line></g><g><rect x="488" y="78" width="8" height="336" fill="#000" fill-opacity="0"></rect><line x1="492" y1="78" x2="492" y2="414"></line></g><text x="5" y="75" fill="#222" font-size="13" textLength="86">Пользователь</text><ellipse cx="51" cy="14" rx="8" ry="8" fill="#EEE"></ellipse><path d="M51,22 L51,48 M38,30 L64,30 M51,48 L38,64 M51,48 L64,64" fill="none"></path><rect x="141" y="50" width="64" height="27" fill="#EEE"></rect><text x="148" y="67" fill="#222" font-size="13" textLength="50">Браузер</text><rect x="317" y="50" width="81" height="27" fill="#EEE"></rect><text x="324" y="67" fill="#222" font-size="13" textLength="67">API заказов</text><text x="454" y="75" fill="#222" font-size="13" textLength="70">Хранилище</text><path d="M474,29 C474,19 492,19 492,19 C492,19 510,19 510,29 L510,55 C510,65 492,65 492,65 C492,65 474,65 474,55 L474,29" fill="#E2E2F0"></path><path d="M474,29 C474,39 492,39 492,39 C492,39 510,39 510,29" fill="none"></path><polygon points="161,101,171,105,161,109,165,105" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="51" y1="105" x2="167" y2="105" style="stroke:#333;stroke-width:1;"></line><text x="70" y="100" fill="#222" font-size="13" textLength="83">Открыть заказ</text><polygon points="346,128,356,132,346,136,350,132" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="173" y1="132" x2="352" y2="132" style="stroke:#333;stroke-width:1;"></line><text x="223" y="127" fill="#222" font-size="13" textLength="85">GET /orders/42</text><line x1="358" y1="159" x2="400" y2="159" style="stroke:#333;stroke-width:1;"></line><line x1="400" y1="159" x2="400" y2="172" style="stroke:#333;stroke-width:1;"></line><line x1="359" y1="172" x2="400" y2="172" style="stroke:#333;stroke-width:1;"></line><polygon points="369,168,359,172,369,176,365,172" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><text x="365" y="154" fill="#222" font-size="13" textLength="101">Проверить права</text><path d="M35,184 L94,184 L94,189 L84,199 L35,199 L35,184" style="stroke:#000;stroke-width:2;" fill="#EEE"></path><rect x="35" y="184" width="473" height="206" fill="none" style="stroke:#000;stroke-width:2;"></rect><text x="50" y="195" fill="#222" font-size="13" textLength="14" font-weight="700">alt</text><text x="109" y="196" fill="#222" font-size="13" textLength="109" font-weight="700">[Доступ разрешён]</text><polygon points="480,224,490,228,480,232,484,228" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="358" y1="228" x2="486" y2="228" style="stroke:#333;stroke-width:1;"></line><text x="370" y="223" fill="#222" font-size="13" textLength="110">Прочитать заказ 42</text><polygon points="369,251,359,255,369,259,365,255" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="363" y1="255" x2="491" y2="255" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="382" y="250" fill="#222" font-size="13" textLength="86">Данные заказа</text><polygon points="184,278,174,282,184,286,180,282" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="178" y1="282" x2="357" y2="282" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="185" y="277" fill="#222" font-size="13" textLength="161">200 + представление заказа</text><polygon points="62,305,52,309,62,313,58,309" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="56" y1="309" x2="172" y2="309" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="68" y="304" fill="#222" font-size="13" textLength="87">Показать заказ</text><line x1="35" y1="318" x2="508" y2="318" style="stroke:#000;stroke-width:1;stroke-dasharray:2,2;"></line><text x="40" y="330" fill="#222" font-size="13" textLength="109" font-weight="700">[Доступ запрещён]</text><polygon points="184,351,174,355,184,359,180,355" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="178" y1="355" x2="357" y2="355" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="202" y="350" fill="#222" font-size="13" textLength="127">403 без данных заказа</text><polygon points="62,378,52,382,62,386,58,382" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="56" y1="382" x2="172" y2="382" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="63" y="377" fill="#222" font-size="13" textLength="98">Объяснить отказ</text></g></svg></div><details class="diagram-source deep-dive"><summary>Исходник диаграммы</summary><pre><code>@startuml
+  <figure class="diagram-rendered"><div class="diagram-viewport" tabindex="0" role="region" aria-label="Диаграмма; прокручивайте по горизонтали для просмотра: В этой модели авторизация происходит до чтения заказа. Ответы возвращаются по обратному пути; отказ не должен приводить к выдаче данных."><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="535" height="420" viewBox="0 0 535 420" zoomAndPan="magnify" preserveAspectRatio="none" role="img" aria-labelledby="rendered-diagram-1-title" focusable="false"><title id="rendered-diagram-1-title">В этой модели авторизация происходит до чтения заказа. Ответы возвращаются по обратному пути; отказ не должен приводить к выдаче данных.</title><defs></defs><g font-family="sans-serif" lengthAdjust="spacing"><rect x="35" y="184" width="473" height="206" fill="none" style="stroke:#000;stroke-width:2;"></rect><g><rect x="47" y="78" width="8" height="336" fill="#000" fill-opacity="0"></rect><line x1="51" y1="78" x2="51" y2="414" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><g><rect x="170" y="78" width="8" height="336" fill="#000" fill-opacity="0"></rect><line x1="173" y1="78" x2="173" y2="414" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><g><rect x="354" y="78" width="8" height="336" fill="#000" fill-opacity="0"></rect><line x1="358" y1="78" x2="358" y2="414" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><g><rect x="488" y="78" width="8" height="336" fill="#000" fill-opacity="0"></rect><line x1="492" y1="78" x2="492" y2="414" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line></g><text x="5" y="75" fill="#222" font-size="13" textLength="86">Пользователь</text><ellipse cx="51" cy="14" rx="8" ry="8" fill="#EEE"></ellipse><path d="M51,22 L51,48 M38,30 L64,30 M51,48 L38,64 M51,48 L64,64" fill="none"></path><rect x="141" y="50" width="64" height="27" fill="#EEE"></rect><text x="148" y="67" fill="#222" font-size="13" textLength="50">Браузер</text><rect x="317" y="50" width="81" height="27" fill="#EEE"></rect><text x="324" y="67" fill="#222" font-size="13" textLength="67">API заказов</text><text x="454" y="75" fill="#222" font-size="13" textLength="70">Хранилище</text><path d="M474,29 C474,19 492,19 492,19 C492,19 510,19 510,29 L510,55 C510,65 492,65 492,65 C492,65 474,65 474,55 L474,29" fill="#E2E2F0"></path><path d="M474,29 C474,39 492,39 492,39 C492,39 510,39 510,29" fill="none"></path><polygon points="161,101,171,105,161,109,165,105" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="51" y1="105" x2="167" y2="105" style="stroke:#333;stroke-width:1;"></line><text x="70" y="100" fill="#222" font-size="13" textLength="83">Открыть заказ</text><polygon points="346,128,356,132,346,136,350,132" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="173" y1="132" x2="352" y2="132" style="stroke:#333;stroke-width:1;"></line><text x="223" y="127" fill="#222" font-size="13" textLength="85">GET /orders/42</text><line x1="358" y1="159" x2="400" y2="159" style="stroke:#333;stroke-width:1;"></line><line x1="400" y1="159" x2="400" y2="172" style="stroke:#333;stroke-width:1;"></line><line x1="359" y1="172" x2="400" y2="172" style="stroke:#333;stroke-width:1;"></line><polygon points="369,168,359,172,369,176,365,172" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><text x="365" y="154" fill="#222" font-size="13" textLength="101">Проверить права</text><path d="M35,184 L94,184 L94,189 L84,199 L35,199 L35,184" style="stroke:#000;stroke-width:2;" fill="#EEE"></path><rect x="35" y="184" width="473" height="206" fill="none" style="stroke:#000;stroke-width:2;"></rect><text x="50" y="195" fill="#222" font-size="13" textLength="14" font-weight="700">alt</text><text x="109" y="196" fill="#222" font-size="13" textLength="109" font-weight="700">[Доступ разрешён]</text><polygon points="480,224,490,228,480,232,484,228" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="358" y1="228" x2="486" y2="228" style="stroke:#333;stroke-width:1;"></line><text x="370" y="223" fill="#222" font-size="13" textLength="110">Прочитать заказ 42</text><polygon points="369,251,359,255,369,259,365,255" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="363" y1="255" x2="491" y2="255" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="382" y="250" fill="#222" font-size="13" textLength="86">Данные заказа</text><polygon points="184,278,174,282,184,286,180,282" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="178" y1="282" x2="357" y2="282" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="185" y="277" fill="#222" font-size="13" textLength="161">200 + представление заказа</text><polygon points="62,305,52,309,62,313,58,309" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="56" y1="309" x2="172" y2="309" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="68" y="304" fill="#222" font-size="13" textLength="87">Показать заказ</text><line x1="35" y1="318" x2="508" y2="318" style="stroke:#000;stroke-width:1;stroke-dasharray:2,2;"></line><text x="40" y="330" fill="#222" font-size="13" textLength="109" font-weight="700">[Доступ запрещён]</text><polygon points="184,351,174,355,184,359,180,355" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="178" y1="355" x2="357" y2="355" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="202" y="350" fill="#222" font-size="13" textLength="127">403 без данных заказа</text><polygon points="62,378,52,382,62,386,58,382" fill="#333" style="stroke:#333;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"></polygon><line x1="56" y1="382" x2="172" y2="382" style="stroke:#333;stroke-width:1;stroke-dasharray:2,2;"></line><text x="63" y="377" fill="#222" font-size="13" textLength="98">Объяснить отказ</text></g></svg></div><details class="diagram-source deep-dive"><summary>Исходник диаграммы</summary><pre><code>@startuml
 actor "Пользователь" as User
 participant "Браузер" as Browser
 participant "API заказов" as API
