@@ -3,6 +3,10 @@ import path from 'node:path';
 import { toolkitRoot, sourceFile, atomicOutput } from './paths.mjs';
 import { parseContent, readMetadata, escapeHtml as e } from './content.mjs';
 import { prepareSvg } from '../renderers/svg.mjs';
+import { prepareImage } from './images.mjs';
+
+const MAX_DOCUMENT_IMAGE_BYTES = 32 * 1024 * 1024;
+const MAX_DOCUMENT_IMAGE_PIXELS = 80_000_000;
 
 export const messages = {
   en: { topics: 'Topics', sections: 'Document sections', onPage: 'On this page', open: 'Open topics', close: 'Collapse topics', skip: 'Skip to content', source: 'Diagram source', download: 'Download source', scroll: 'Diagram; scroll horizontally to inspect', footer: 'Document / reference' },
@@ -30,6 +34,22 @@ export async function buildDocument(directory, { out } = {}) {
   const text = messages[metadata.lang];
   const protectedPaths = [metadataPath, contentPath];
   const warnings = [];
+  let imageBytes = 0;
+  let imagePixels = 0;
+  const images = [...document.querySelectorAll('img')];
+  for (const image of images) {
+    const prepared = await prepareImage(root, image.getAttribute('src'));
+    imageBytes += prepared.bytes;
+    imagePixels += prepared.width * prepared.height;
+    if (imageBytes > MAX_DOCUMENT_IMAGE_BYTES) throw new Error('Document images exceed 32 MiB total (counting each occurrence).');
+    if (imagePixels > MAX_DOCUMENT_IMAGE_PIXELS) throw new Error('Document images exceed 80 million pixels total (counting each occurrence).');
+    protectedPaths.push(prepared.filename);
+    image.setAttribute('src', prepared.dataUrl);
+    image.setAttribute('width', String(prepared.width));
+    image.setAttribute('height', String(prepared.height));
+    image.classList.add('document-image');
+    if (image.parentElement.localName === 'figure') image.parentElement.classList.add('image-figure');
+  }
   let count = 0;
   let hasBpmn = false;
   for (const figure of document.querySelectorAll('[data-diagram]')) {
@@ -124,5 +144,5 @@ export async function buildDocument(directory, { out } = {}) {
 <footer class="site-footer"><div class="page"><p class="footer-mark">${text.footer}</p></div></footer>
 </div><script>\n${navigation}\n</script>${bpmnScripts}</body></html>\n`;
   const output = await atomicOutput(out, html, protectedPaths);
-  return { output, warnings, diagrams: count, sections: topics.length, browserRenderedBpmn: hasBpmn };
+  return { output, warnings, diagrams: count, images: images.length, sections: topics.length, browserRenderedBpmn: hasBpmn };
 }

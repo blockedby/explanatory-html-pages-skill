@@ -2,7 +2,7 @@
 
 ## What runs where
 
-Authoring uses Node 22.12+ and pinned npm packages. No Java, Chromium, native Graphviz or browser executable is required for any build. PlantUML becomes static SVG during the build; BPMN XML is validated/laid out in Node and rendered by embedded bpmn-js when the reader opens the HTML in an ordinary browser. The complete HTML works offline: CSS, navigation, BPMN renderer/sanitizer and sources are inline, with no CDN or server. BPMN requires reader JavaScript; the document text, PlantUML and downloadable diagram sources do not.
+Authoring uses Node 22.12+ and pinned npm packages. No Java, Chromium, native Graphviz or browser executable is required for any build. PlantUML becomes static SVG during the build; BPMN XML is validated/laid out in Node and rendered by embedded bpmn-js when the reader opens the HTML in an ordinary browser. The complete HTML works offline: CSS, navigation, supported local raster images, the BPMN renderer/sanitizer and sources are inline, with no CDN or server. Local images do not create reader network dependencies. BPMN requires reader JavaScript; the document text, PlantUML and downloadable diagram sources do not.
 
 Setup is the only online step:
 
@@ -39,7 +39,7 @@ end
 @enduml
 ```
 
-The safe source subset deliberately excludes preprocessors/includes, built-in functions, images, custom skin/style/layout replacement, multiple diagrams and pagination. The conservative scanner also applies to comments and quoted text; avoid directive-like text or exclamation marks in labels. These are toolkit limits, not a claim that PlantUML itself lacks those features. Keep explanation in document prose when a label would require excluded syntax.
+The safe source subset deliberately excludes preprocessors/includes, built-in functions, image directives, custom skin/style/layout replacement, multiple diagrams and pagination. The conservative scanner also applies to comments and quoted text; avoid directive-like text or exclamation marks in labels. These are toolkit limits, not a claim that PlantUML itself lacks those features. Keep explanation in document prose when a label would require excluded syntax.
 
 Execution uses a cancellable Node worker thread with bounded time/memory/output, restricted source syntax and blocked network APIs. No Java process, shell, public renderer or runtime download is used. Input is limited to 256 KiB; generated SVG to 8 MiB. Syntax errors and renderer error images are failures, not successful diagrams. The editable source embedded in the report remains the author's original input, not the injected styling.
 
@@ -53,9 +53,17 @@ The explicit-DI fixtures under `tests/fixtures/bpmn/` demonstrate notation beyon
 
 BPMN source is limited to 2 MiB and 10,000 XML elements; output to 8 MiB. DOCTYPE/entity declarations are refused. Auto-layout runs in a cancellable worker thread. Monochrome rendering retains BPMN task, gateway and event markers; it does not replace them with generic boxes.
 
+## Authored local raster images
+
+Local raster images are optional ordinary content. The author creates the document's `images/` directory only when needed and keeps the editable files beside `content.html`; the authoring markup and accessibility rules are in [authoring.md](authoring.md). PNG, JPEG (`.jpg`, `.jpeg`) and WebP are supported. SVG and GIF are not supported as authored content images; rendered diagram SVG continues to use its existing PlantUML/BPMN contract.
+
+At build time, the original image bytes are embedded as a `data:image/...;base64,...` URL with intrinsic dimensions for responsive, uncropped display. The reader does not fetch the image or need a network. The input path and any symlink must resolve within the document directory, and the output cannot overwrite an image source. Limits are 8 MiB, 40 million pixels and 65,535 pixels per axis for each still image, plus 32 MiB of raw image bytes and 80 million pixels per document, counting every occurrence. Animated PNG/WebP and multi-image JPEG are rejected. Metadata/EXIF is not stripped. Format/header checks are not a full pixel decoder.
+
+Remote or data URLs as an authored `src`, `srcset`, `style`, `onload`, and arbitrary `<iframe>`/HTML embedding remain forbidden. These rules apply to authored raster images; the PlantUML and BPMN diagram contracts above are unchanged.
+
 ## Safe embedding and source retention
 
-PlantUML SVG is sanitized during the build; BPMN SVG is sanitized in the reader. Both paths namespace IDs/local references, add accessible titles, and use keyboard-focusable local scroll regions. Scripts, event handlers, foreign objects, image resources and remote references are forbidden. PlantUML renderer styles are flattened into SVG-local declarations; BPMN's generated SVG is restricted to safe local presentation so it cannot alter the document theme. The fixed legacy SVG doctype emitted by bpmn-js is stripped before parsing; arbitrary doctypes/entities remain forbidden.
+PlantUML SVG is sanitized during the build; BPMN SVG is sanitized in the reader. Both paths namespace IDs/local references, add accessible titles, and use keyboard-focusable local scroll regions. Scripts, event handlers, foreign objects, embedded image resources and remote references remain forbidden inside rendered diagram SVG. PlantUML renderer styles are flattened into SVG-local declarations; BPMN's generated SVG is restricted to safe local presentation so it cannot alter the document theme. The fixed legacy SVG doctype emitted by bpmn-js is stripped before parsing; arbitrary doctypes/entities remain forbidden.
 
 Diagram sources are escaped text in a native disclosure and can be downloaded offline. Source links use embedded `data:text/plain` URLs; no source file needs to be fetched when reading the report. A figure caption should explain the diagram's interpretation and limits, not merely give it a number.
 

@@ -24,22 +24,33 @@ Resolve every path below relative to this skill's directory, wherever it was ins
      --title "How order submission works" --lang en --preset integration
    ```
    Presets: `explainer`, `process`, `integration`. Interface languages: `en`, `ru`. The starter is editable example content, not a claim about the user's system. Replace it with the actual explanation.
-4. Edit `document.json`, `content.html`, and sources in `diagrams/`. Reuse snippets from `assets/components/`; consult [components.md](references/components.md) and [authoring.md](references/authoring.md). Do not add CSS or scripts to `content.html`.
+4. Edit `document.json`, `content.html`, sources in `diagrams/`, and any optional local files in `images/`. Reuse snippets from `assets/components/`; consult [components.md](references/components.md) and [authoring.md](references/authoring.md). Do not add CSS or scripts to `content.html`.
 5. Build and inspect:
    ```sh
    node /path/to/skill/scripts/document.mjs build /path/to/document \
      --out /path/to/document/report.html
    ```
-   Open the result locally. Check wide/narrow screens, diagrams, navigation, keyboard focus and print. A successful build verifies structure/rendering, **not business correctness**.
-6. Deliver the HTML and keep the source directory available for editing. Each rendered diagram includes an expandable, downloadable source. No server is required to read the result.
+   Open the result locally. Check wide/narrow screens, local images, diagrams, navigation, keyboard focus and print. A successful build verifies structure/rendering, **not business correctness**.
+6. Deliver the HTML and keep the source directory available for editing, including any editable image files. Each rendered diagram includes an expandable, downloadable source. No server is required to read the result.
 
-Create refuses an existing directory. Build replaces only the explicitly named output, atomically after source validation, PlantUML rendering and BPMN preparation; it must not overwrite source files. Do not bypass errors with hand-authored renderer SVG or remote rendering services.
+Create refuses an existing directory. Build replaces only the explicitly named output, atomically after source validation, local image embedding, PlantUML rendering and BPMN preparation; it must not overwrite source files or images. Do not bypass errors with hand-authored renderer SVG or remote rendering services.
 
 ## Author content, not a document framework
 
 `document.json` contains only `title`, optional `description`, and `lang`. `content.html` is ordinary semantic HTML: top-level sections with `h2` headings, paragraphs, lists, tables and selected components. The builder generates navigation from section headings. Supply stable section IDs when cross-references matter; missing IDs are generated, including Cyrillic headings. Use `data-nav-title` on a section for a shorter navigation label without shortening the visible heading.
 
 The title is the document's one `h1`. Start with the useful idea, not a decorative masthead or metadata block. Do not add audience/read-time/model labels unless specifically relevant. The shared compact monochrome theme controls typography, density, responsive navigation and print. Compact layout is **not** an instruction to shorten the reasoning.
+
+Local raster images are optional, not a requirement for every document. Create an `images/` directory under the document only when needed, copy the source file there, and author ordinary markup in `content.html`:
+
+```html
+<figure>
+  <img src="images/screenshot.png" alt="Meaningful description">
+  <figcaption>Explain what to notice.</figcaption>
+</figure>
+```
+
+A bare `<img>` is also supported. Every image needs `alt`; use `alt=""` only for intentionally decorative images. Use the `alt` text for the image's accessible meaning and the caption to explain what to notice. PNG, JPEG (`.jpg`, `.jpeg`) and WebP are supported. The build embeds original bytes as a `data:image/...;base64,...` URL with intrinsic dimensions for responsive, uncropped display; reading the result needs no network. Do not use a remote or data URL as an authored `src`, SVG/GIF, `srcset`, `style`, `onload`, or arbitrary `<iframe>`/HTML embedding. See [authoring.md](references/authoring.md) for path and size limits.
 
 Use the amount of explanation the subject needs:
 

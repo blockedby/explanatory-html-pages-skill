@@ -4,6 +4,16 @@ Tracking: https://github.com/blockedby/explanatory-html-pages-skill/issues/1
 
 Verified on Linux x64 with Node 24.21.0. Builds use npm dependencies only: PlantUML TeaVM/Viz.js in Node, BPMN XML/DI preparation in Node, and embedded bpmn-js/DOMPurify in the reader. Neither Java nor Chromium is a build requirement. Chromium was used only as an optional development tool to test the ordinary reader-browser path. This is implementation acceptance, not proof of business correctness.
 
+## Local raster image embedding
+
+Added source-authored PNG/JPEG/WebP images as ordinary `img`/`figure` markup. Builds embed original bytes as correctly typed data URLs, retain editable files, require explicit alt text, add intrinsic dimensions and use the shared responsive canvas without cropping. No new production dependencies or reader JavaScript are required for images.
+
+Fresh acceptance: **66 unit/renderer/integration tests and 12 browser scenarios passed**, zero failures/skips; example/template builds, repository validation and diff checks passed. Coverage includes exact byte retention, format/header checks, Unicode paths, confined/escaping symlinks, unsupported/remote sources, malformed files, atomic failure, an 8 MiB/40-million-pixel per-image limit and cumulative 32 MiB/80-million-pixel document limits. Ordinary source files retain their 2 MiB default limit. PNG/JPEG/WebP created by a real browser decoded after their external source files were removed, offline at 1440/768/390px, with reader JavaScript both enabled and disabled; print visibility was checked.
+
+Built `/home/kcnc/code/local-images-example/report.html` through the canonical scaffold/build path, using `/tmp/pipi-pipelines-refined-desktop.png` copied into its retained `images/` directory. Its independent browser probe verified the embedded 1440×1000 PNG, shared left alignment, aspect ratio, no page overflow, no HTTP requests/page errors and print-to-PDF. Inspected desktop/mobile screenshots in its `checks/` directory. This local demonstration image is not added to the public repository.
+
+The image gate validates bounded format structure/headers, not full compressed pixel data or PNG CRCs; metadata/EXIF is preserved. Animated/multiframe formats are rejected. Existing diagram rendering and safety boundaries are unchanged. Browser checks used disposable Playwright Chromium; the configured browser MCP launcher referenced a missing local skill path and was not used.
+
 ## Documentation spacing and integrated rendering verification
 
 Added 20px content-block gaps, 28–32px section/subheading breaks, light neutral table headers and thin separators without changing shared widths or inline-callout behavior. Fresh integration: **46 unit/renderer tests and 11 browser scenarios passed**, zero failures/skips; rebuilt all examples/template and both delivered reports, then passed repository validation and diff checks. Geometry tests cover 1920/1440/768/390px and both sidebar states, including actual header/introduction and table/prose gaps.

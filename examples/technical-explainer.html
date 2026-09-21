@@ -414,6 +414,10 @@ pre code { padding: 0; border: 0; overflow-wrap: normal; }
 .definition code, .node--dark code { color: var(--ink); }
 .skip-link::selection, .skip-link ::selection { color: var(--ink); background: var(--paper); }
 :where([tabindex]):focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+figure.image-figure { margin: 1.25rem 0; }
+.document-image { display: block; max-width: 100%; height: auto; }
+.image-figure > .document-image { border: 1px solid var(--rule); }
+.image-figure > figcaption { margin-top: 0.75rem; padding-top: 0; border-top: 0; color: var(--muted); }
 figure.diagram-rendered { margin: 1.25rem 0; padding: 1rem; border: 1px solid var(--rule); background: var(--surface); }
 .diagram-viewport { max-width: 100%; min-width: 0; overflow: auto; padding: 0.25rem; margin-bottom: 1rem; }
 /* Preserve renderer dimensions: large diagrams scroll locally rather than shrinking labels. */

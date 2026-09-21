@@ -38,15 +38,29 @@ Only these keys are accepted. `lang` is `en` or `ru`; the document shell and dia
 
 Navigation is generated from top-level sections. Stable author-supplied IDs survive edits; absent IDs are generated from headings, with suffixes for repeated headings. Cyrillic is supported. Duplicate/reserved IDs and broken local anchors are errors. Keep IDs meaningful; do not manually number navigation entries.
 
-No `html`, `head`, `body`, `h1`, page navigation, CSS, scripts, images or remote resources belong in source content. The supported semantic vocabulary includes paragraphs, sections/articles/asides, headings h2–h6, lists, definition lists, tables, code/pre, links, figures and native details/summary. Components use these same elements. Use `.puml` and `.bpmn` sources for rendered diagrams, not opaque image exports.
+No `html`, `head`, `body`, `h1`, page navigation, CSS, scripts or arbitrary HTML embedding belong in source content. The supported semantic vocabulary includes paragraphs, sections/articles/asides, headings h2–h6, lists, definition lists, tables, code/pre, links, figures, `img` and native details/summary. Components use these same elements. Use `.puml` and `.bpmn` sources for rendered diagrams, not opaque diagram image exports.
+
+Local raster images are optional. When a document needs one, create an `images/` directory beside `content.html`, copy the source file there, and use a relative local path:
+
+```html
+<figure>
+  <img src="images/screenshot.png" alt="Meaningful description">
+  <figcaption>Explain what to notice.</figcaption>
+</figure>
+```
+
+A bare `<img>` is supported too. Every image needs an `alt` attribute; use `alt=""` only for intentional decoration. Alt text supplies the image's accessible meaning; a caption should explain what to notice rather than replace it. Supported local files are PNG, JPEG (`.jpg`, `.jpeg`) and WebP. The build embeds the original bytes as a `data:image/...;base64,...` URL and supplies intrinsic dimensions for responsive, uncropped display. The reader has no network dependency for these images. Do not use a remote or data URL as an authored `src`, SVG/GIF, `srcset`, `style`, `onload`, or arbitrary `<iframe>`/HTML embedding.
+
+Image paths and symlinks must resolve within the document directory, and the output cannot overwrite an image source. Each still image is limited to 8 MiB, 40 million pixels and 65,535 pixels per axis; document totals are limited to 32 MiB of raw image bytes and 80 million pixels, counting every occurrence. Animated PNG/WebP and multi-image JPEG are rejected. Metadata/EXIF is not stripped, so do not use private images inadvertently. Format/header checks are not a full pixel decoder.
 
 ## Revising an existing document
 
-Keep the editable source directory alongside the delivered HTML. A follow-up such as “add a warning after this table”, “replace this block” or “remove this section” is a source edit followed by the same build command—not a new scaffold or a rewrite of the finished HTML.
+Keep the editable source directory alongside the delivered HTML, including image files in its optional `images/` directory. A follow-up such as “add a warning after this table”, “replace this block”, “remove this section” or “replace an image” is a source edit followed by the same build command—not a new scaffold or a rewrite of the finished HTML. Never edit the generated HTML.
 
 | Requested change | Edit |
 | --- | --- |
 | Add, replace, remove or reorder a content block | The relevant part of `content.html` |
+| Add, replace or remove an image | The image file under the optional `images/` directory and its `<img>` in `content.html`; rebuild |
 | Change a diagram | Its referenced file in `diagrams/`; update the caption if needed |
 | Change document title, description or language | `document.json` (translate authored content separately) |
 | Change appearance | Prefer existing component classes; change canonical assets only for an intentional shared design-system change |
@@ -90,4 +104,4 @@ Before delivery:
 3. Use the topics disclosure, keyboard Tab, Enter and Escape; follow a final-section anchor.
 4. Inspect actual text layout, not only absence of overflow: long headings and inline code must wrap legibly; note sentences must remain continuous; short-label and single-paragraph callouts must not leave empty grid columns. Check that prose and fact blocks have coherent reading widths. Inspect diagrams with local horizontal scrolling.
 5. Check print preview, including expanded native details and diagram source behavior.
-6. Deliver the HTML and preserve the source directory for future edits.
+6. Deliver the HTML and preserve the source directory, including editable image files, for future edits.

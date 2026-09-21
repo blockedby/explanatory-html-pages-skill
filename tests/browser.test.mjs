@@ -5,12 +5,71 @@ import os from 'node:os';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { toolkitRoot } from '../scripts/lib/paths.mjs';
+import { buildDocument } from '../scripts/lib/build.mjs';
 
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.join(toolkitRoot, '.tools/ms-playwright');
 const { chromium } = await import('playwright');
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
 const examples = ['technical-explainer', 'business-process', 'integration-spec', 'component-catalog'];
 test.after(() => browser.close());
+
+test('local PNG/JPEG/WebP images decode offline, retain aspect ratio and print without reader JavaScript', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'image-browser-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const scratch = await browser.newPage();
+  const samples = await scratch.evaluate(() => {
+    const canvas = document.createElement('canvas'); canvas.width = 2000; canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#e0e8ef'; ctx.fillRect(0, 0, 2000, 400);
+    ctx.fillStyle = '#191919'; ctx.font = '80px sans-serif'; ctx.fillText('Embedded screenshot', 60, 220);
+    return ['png', 'jpeg', 'webp'].map(type => ({ type, url: canvas.toDataURL(`image/${type}`) }));
+  });
+  await scratch.close();
+  for (const sample of samples) {
+    assert.ok(sample.url.startsWith(`data:image/${sample.type};base64,`));
+    await writeFile(path.join(root, `sample.${sample.type}`), Buffer.from(sample.url.split(',')[1], 'base64'));
+  }
+  await writeFile(path.join(root, 'document.json'), JSON.stringify({ title: 'Embedded images', lang: 'en' }));
+  await writeFile(path.join(root, 'content.html'), `<section><h2>Image samples</h2>${samples.map(({ type }) => `<figure><img src="sample.${type}" alt="${type} screenshot"><figcaption>${type} image caption</figcaption></figure>`).join('')}</section>`);
+  const out = path.join(root, 'report.html');
+  await buildDocument(root, { out });
+  // Move the HTML away from its source assets: decoding must not rely on nearby files.
+  const standalone = path.join(root, 'standalone.html');
+  await writeFile(standalone, await readFile(out));
+  for (const { type } of samples) await rm(path.join(root, `sample.${type}`));
+  for (const javaScriptEnabled of [true, false]) {
+    const context = await browser.newContext({ javaScriptEnabled, offline: true });
+    const network = [];
+    context.on('request', request => { if (/^https?:/.test(request.url())) network.push(request.url()); });
+    const page = await context.newPage();
+    const errors = []; page.on('pageerror', error => errors.push(error.message));
+    await page.goto(pathToFileURL(standalone).href);
+    for (const width of [1440, 768, 390]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.waitForFunction(() => [...document.images].every(image => image.complete && image.naturalWidth > 0));
+      const metrics = await page.locator('img').evaluateAll(images => images.map(image => ({
+        width: image.getBoundingClientRect().width,
+        height: image.getBoundingClientRect().height,
+        naturalWidth: image.naturalWidth,
+        naturalHeight: image.naturalHeight,
+        parentWidth: image.parentElement.getBoundingClientRect().width,
+        alt: image.alt,
+        src: image.getAttribute('src')
+      })));
+      for (const metric of metrics) {
+        assert.equal(metric.naturalWidth, 2000); assert.equal(metric.naturalHeight, 400);
+        assert.ok(metric.width > 0 && metric.width <= metric.parentWidth + 1);
+        assert.ok(Math.abs((metric.width - 2) / (metric.height - 2) - 5) < 0.03, 'image is not distorted or cropped');
+        assert.ok(metric.alt.endsWith('screenshot')); assert.ok(metric.src.startsWith('data:image/'));
+      }
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+    }
+    await page.emulateMedia({ media: 'print' });
+    assert.equal(await page.locator('img').evaluateAll(images => images.every(image => getComputedStyle(image).display !== 'none' && image.naturalWidth === 2000)), true);
+    assert.deepEqual(network, []); assert.deepEqual(errors, []);
+    await context.close();
+  }
+});
 
 test('standalone examples remain usable offline on desktop, mobile and print', async t => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });

@@ -2,7 +2,7 @@
 
 Components are optional tools for answering a reader's question, **not mandatory document sections**. Start with the question and copy only the useful material. A short explanation may need a definition and a flow; an integration reference may need a contract and mapping, without a goals register or glossary.
 
-The files in `assets/components/` are plain semantic HTML source snippets. Each is a complete top-level `<section>` with an `h2`, suitable for copying into `content.html` or for the parent-built component catalog. They have no document shell, scripts, remote assets, or authoring placeholders. The stock-reservation examples illustrate a fictional service contract; their timings, IDs, rules, and requirements are examples, not claims about your system.
+The files in `assets/components/` are plain semantic HTML source snippets. Each is a complete top-level `<section>` with an `h2`, suitable for copying into `content.html` or for the parent-built component catalog. They have no document shell, scripts, remote assets, or authoring placeholders. Local raster images are optional ordinary content, not a required component or document section; follow the local-image contract in [authoring.md](authoring.md) when a component benefits from one. The stock-reservation examples illustrate a fictional service contract; their timings, IDs, rules, and requirements are examples, not claims about your system.
 
 ## Authoring and build
 
@@ -31,8 +31,8 @@ Creation produces `document.json`, `content.html`, and `diagrams/`. Metadata has
 3. Each top-level section needs an `h2`; use `h3` for subtopics. You may copy just a component's inner markup into an existing section rather than nesting complete sections unnecessarily.
 4. Keep IDs unique across the assembled document. If you copy a snippet twice, rename its section and caption IDs and every corresponding `aria-labelledby`, `aria-describedby`, or fragment link. These snippets have distinct IDs when used once each.
 5. Keep table captions and `scope` attributes. A `.doc-table-scroll` region has a descriptive `aria-label` and `tabindex="0"` for keyboard scrolling; retain both. Do not convert decision tables into screenshots or hide columns on mobile.
-6. Do not add `html`, `head`, `body`, `h1`, navigation, a manual TOC, styles, or scripts to `content.html`. The builder owns the shell, title, navigation, and embedded assets. Do not add `.page` wrappers to every section.
-7. Keep output separate from metadata, source HTML, and diagram sources. Rebuild after editing; do not maintain the generated report as source.
+6. Do not add `html`, `head`, `body`, `h1`, navigation, a manual TOC, styles, scripts, arbitrary iframes or HTML embedding to `content.html`. The builder owns the shell, title, navigation, and embedded assets. Do not add `.page` wrappers to every section. Add optional local images only under the authoring contract.
+7. Keep output separate from metadata, source HTML, diagram sources and optional image files. Rebuild after editing; never edit or maintain the generated report as source.
 
 The CLI resolves assets from the installed skill directory, not the document workspace. If invoked from another working directory, use the installed path to `scripts/document.mjs`.
 
